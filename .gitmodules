@@ -1,0 +1,3 @@
+[submodule "hardware/driver-go"]
+	path = hardware/driver-go
+	url = git@github.com:TTK4145/driver-go.git
