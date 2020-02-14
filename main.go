@@ -1,8 +1,8 @@
 package main
 
 import (
-	"time"
 	"fmt"
+	"time"
 )
 
 func timerCallback(timer *time.Timer, x int, wait chan int) {
@@ -19,7 +19,7 @@ func callback2(x int, wait chan int) {
 func main() {
 	wait := make(chan int)
 	x := 1
-	time.AfterFunc(1 * time.Second, func () {
+	time.AfterFunc(1*time.Second, func() {
 		callback2(x, wait)
 	})
 	// timer := time.NewTimer(1 * time.Second)
