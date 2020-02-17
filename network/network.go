@@ -12,6 +12,7 @@ type Msg struct {
 
 func InitSender(addr string) chan interface{} {
 	msg_ch := make(chan interface{})
+	go sendNewMessage(addr, msg_ch)
 	return msg_ch
 }
 
