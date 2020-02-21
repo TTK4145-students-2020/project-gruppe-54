@@ -17,8 +17,9 @@ import (
 	"encoding/gob"
 	"fmt"
 	"log"
+	"math"
 	"net"
-	"reflect"
+	"time"
 )
 
 const broadcast_addr = "255.255.255.255"
@@ -31,58 +32,24 @@ type Packet struct {
 }
 
 func main() {
-	t := "Test"
-	fmt.Printf("got %s\n", reflect.TypeOf(inferType(t)))
-}
-
-func inferType(t interface{}) interface{} {
-	switch t := t.(type) {
-	case string:
-		return make(chan string)
+	rec_ch, send_ch := Init("3000", "3000")
+	a, b := 1, 101
+	c, d := 3, 4
+	i := 0.0
+	var send_msg Packet
+	for {
+		if math.Mod(i, 2) == 0 {
+			send_msg = Packet{A: c, B: d}
+		} else {
+			send_msg = Packet{A: a, B: b}
+		}
+		fmt.Printf("Sent: %+v\n", send_msg)
+		send_ch <- send_msg
+		fmt.Printf("Received: %+v\n", <-rec_ch)
+		a, b = a+1, b+1
+		i = i + 1
+		time.Sleep(500 * time.Millisecond)
 	}
-	return nil
-}
-
-// rec_ch, send_ch := Init("3000", "3000")
-// a, b := 1, 101
-// c, d := 3, 4
-// i := 0.0
-// var send_msg Packet
-// for {
-// 	if math.Mod(i, 2) == 0 {
-// 		send_msg = Packet{A: c, B: d}
-// 	} else {
-// 		send_msg = Packet{A: a, B: b}
-// 	}
-// 	fmt.Printf("Sent: %+v\n", send_msg)
-// 	send_ch <- send_msg
-// 	fmt.Printf("Received: %+v\n", <-rec_ch)
-// 	a, b = a+1, b+1
-// 	i = i + 1
-// 	time.Sleep(500 * time.Millisecond)
-// }
-
-func initChannel(port string) chan interface{} {
-	ch := make(chan interface{})
-	go sender(ch, port)
-	return ch
-}
-
-func sender(ch chan interface{}, port string) {
-	// localAddress, _ := net.ResolveUDPAddr("udp", broadcast_addr+":"+port)
-	// conn, err := net.DialUDP("udp", nil, localAddress)
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
-	// defer conn.Close()
-	// sendMsg := Packet{}
-	// buffer = make([]byte, 1024)
-	// buf := bytes.NewBuffer(buffer)
-	// enc := gob.NewEncoder(buf)
-	// for {
-	// 	sendMsg = <-ch
-
-	// }
 }
 
 func Init(readPort, writePort string) (<-chan Packet, chan<- Packet) {
