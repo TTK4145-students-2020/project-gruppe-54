@@ -25,17 +25,11 @@ func main(){
 	var state int
 	const (
 		IDLE      = 0
-		DRIVE    = 1
+		DRIVE     = 1
 		DOOR_OPEN = 2
 	)
-
-	doorTimedOut := time.NewTimer(3 * time.Second)
-	engineErrorTimer := time.NewTimer(3 * time.Second)
-	doorTimedOut.Stop()
-	engineErrorTimer.Stop()
-	orderCleared := false
-	ch.Elevator <- elevator
-
+	a:= <- drv_floors
+	fmt.print(a)
     
     for {
 		switch State{
@@ -63,7 +57,23 @@ func main(){
 				SetDoorOpenLamp(false)
 				wd.Stop()
 			}
+			deleteOrder(drv_floors)
+			if ordersAbove(drv_floors){
+				SetMotorDirection(elevio.MD_Up)
+				direction = elevio.MD_Up
+				state = DRIVE
+			}else if ordersBelow(drv_floors){
+				SetMotorDirection(elevio.MD_Down)
+				direction = elevio.MD_Down
+				state = DRIVE
+			}else{
+				state = IDLE
+			}
+		if <-drv_buttons {
+			order := <- drv_buttons
+		}	
 		}
         
-    }    
+	    
+	
 }
