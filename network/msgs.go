@@ -1,10 +1,36 @@
 package network
 
-type RecCh interface {
+type MsgCh interface {
+	Ch() chan interface{}
 }
 
 type CostMsg struct {
-	channel chan CostMsg
-	Cost    float64
-	ID      int
+	Cost float64
+	ID   int
 }
+
+type CostMsgCh struct {
+	channel chan interface{}
+}
+
+func (self CostMsgCh) Ch() chan interface{} {
+	return (self).channel
+}
+
+type TestMsg struct {
+	A int
+}
+
+type TestMsgCh struct {
+	channel chan interface{}
+}
+
+func (self TestMsgCh) Ch() chan interface{} {
+	return (self).channel
+}
+
+const (
+	BROADCAST_ADDR = "255.255.255.255"
+	COST_MSG_PORT  = "3000"
+	TEST_MSG_PORT  = "15000"
+)

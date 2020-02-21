@@ -3,46 +3,46 @@ package network
 import (
 	"bytes"
 	"encoding/gob"
+	"fmt"
+	"log"
 	"net"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-type TestMsg struct {
-	A int
-}
-
 func TestInitSender(t *testing.T) {
-	addr := "localhost"
-	port := "3000"
-	msg_ch := InitSender(addr)
-	test_msg := TestMsg{1}
-	ln, err := net.ListenPacket("udp", ":"+port)
+	test_msg := TestMsg{}
+	msg_ch := InitSender(test_msg)
+	localAddress, _ := net.ResolveUDPAddr("udp", ":"+TEST_MSG_PORT)
+	connection, err := net.ListenUDP("udp", localAddress)
 	if err != nil {
-		t.Errorf("Could not initialise server at %s\n", addr)
+		log.Fatal(err)
 	}
-	defer ln.Close()
-	rec_ch := make(chan TestMsg)
+	defer connection.Close()
+	var rec_msg interface{}
+	inputBytes := make([]byte, 4096)
 	go func() {
-		rec_msg := TestMsg{}
-		inBytes := make([]byte, 4096)
-		n, _, err := ln.ReadFrom(inBytes)
-		if err != nil {
-			t.Error("Could not read from UDP")
+		a := 19
+		for {
+			test_msg = TestMsg{a}
+			msg_ch.Ch() <- test_msg
+			time.Sleep(500 * time.Millisecond)
+			a = a + 1
 		}
-		buf := bytes.NewBuffer(inBytes[:n])
-		dec := gob.NewDecoder(buf)
-		err = dec.Decode(&rec_msg)
-		if err != nil {
-			t.Error("Could not decode received msg")
-		}
-		rec_ch <- rec_msg
 	}()
-	msg_ch <- test_msg
-	rec_msg := <-rec_ch
+	length, _, _ := connection.ReadFromUDP(inputBytes)
+	fmt.Println("Received packet!")
+	buffer := bytes.NewBuffer(inputBytes[:length])
+	decoder := gob.NewDecoder(buffer)
+	err = decoder.Decode(&rec_msg)
+	if err != nil {
+		log.Fatalf("decoding: %s", err)
+	}
 	if !cmp.Equal(rec_msg, test_msg) {
 		t.Errorf("rec_msg not equal to test_msg\nrec_msg: %+v\ntest_msg: %+v\n", rec_msg, test_msg)
+	} else {
+		fmt.Printf("Success!\nSent: %+v\nReceived %+v\n", test_msg, rec_msg)
 	}
-
 }

@@ -90,6 +90,7 @@ func broadcast(send chan Packet, port string) {
 	for {
 		var buffer bytes.Buffer
 		encoder := gob.NewEncoder(&buffer)
+		fmt.Println("Waiting for message to receive...")
 		message := <-send
 		fmt.Printf("Sending %+v\n", message)
 		err := encoder.Encode(&message)
