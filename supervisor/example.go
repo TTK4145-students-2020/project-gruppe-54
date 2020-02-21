@@ -7,11 +7,10 @@ import (
 	"./watchdog"
 )
 
-func main() {
+func main2() {
 	fmt.Println("Starting watchdog")
 	stop := make(chan bool)
 	go func() {
-		fmt.Println("HELLO")
 		wd := watchdog.NewWatchdog(time.Second * 3)
 		i := 0
 		for {
@@ -29,5 +28,10 @@ func main() {
 			}
 		}
 	}()
+	wd2 := watchdog.NewWatchdog(time.Second * 3)
+	if <-wd2.GetKickChannel() {
+		fmt.Println("wd2")
+		wd2.Stop()
+	}
 	<-stop
 }
