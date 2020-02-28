@@ -1,12 +1,15 @@
 package internal_control
 
 import (
+	"time"
+
 	"../hardware/driver-go/elevio"
+	"../supervisor/watchdog"
 )
 
 var state int
 
-var floor int
+var Floor int
 
 const (
 	IDLE      = 0
@@ -16,56 +19,53 @@ const (
 
 func FsmInit() {
 	state = IDLE
+	Floor = 0
 }
 
 func FsmUpdateFloor(newFloor int) {
-	floor = newFloor
-	println("floor: %d%v", floor)
+	Floor = newFloor
+	println("Floor: %d%v", Floor)
 }
 
 func FSM() {
-	//elevio.SetMotorDirection(elevio.MD_Up)
-
+	//println("Floor: ", Floor)
 	switch state {
 	case IDLE:
-		if ordersAbove(floor) {
-			println("order above, current floor: ", floor)
+		if ordersAbove(Floor) {
+			println("order above, current Floor: ", Floor)
 			elevio.SetMotorDirection(elevio.MD_Up)
-			//direction = elevio.MD_Up
 			state = DRIVE
 		}
-		if ordersBelow(floor) {
-			println("order below, current floor: ", floor)
+		if ordersBelow(Floor) {
+			println("order below, current Floor: ", Floor)
 			elevio.SetMotorDirection(elevio.MD_Down)
-			//direction = elevio.MD_Down
 			state = DRIVE
 		}
 	case DRIVE:
 
-		if ordersInFloor(floor) {
+		if ordersInFloor(Floor) {
 			elevio.SetMotorDirection(elevio.MD_Stop)
-			//direction = elevio.MD_Stop
 			state = DOOR_OPEN
 		}
 	case DOOR_OPEN:
 
-		/*elevio.SetDoorOpenLamp(true)
+		elevio.SetDoorOpenLamp(true)
 		wd := watchdog.NewWatchdog(time.Second * 3)
 		if <-wd.getKickChannel() {
 			elevio.SetDoorOpenLamp(false)
 			wd.Stop()
 		}
 		orderDone <- true
-		if ordersAbove(floor) {
+		if ordersAbove(Floor) {
 			elevio.SetMotorDirection(elevio.MD_Up)
 			direction = elevio.MD_Up
 			state = DRIVE
-		} else if ordersBelow(floor) {
+		} else if ordersBelow(Floor) {
 			elevio.SetMotorDirection(elevio.MD_Down)
 			direction = elevio.MD_Down
 			state = DRIVE
 		} else {
 			state = IDLE
-		}*/
+		}
 	}
 }

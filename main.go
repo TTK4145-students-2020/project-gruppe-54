@@ -33,7 +33,6 @@ func main() {
 */
 
 func main() {
-	ic.FsmInit()
 	fmt.Println("testing internal control")
 
 	ic.InternalControl()

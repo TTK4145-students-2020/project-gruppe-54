@@ -13,19 +13,20 @@ func InternalControl() {
 
 	initQueue()
 	printQueue()
-	var direction elevio.MotorDirection = elevio.MD_Up
-	elevio.SetMotorDirection(direction)
+	FsmInit()
+	//var direction elevio.MotorDirection = elevio.MD_Up
+	//elevio.SetMotorDirection(direction)
 	drv_buttons := make(chan elevio.ButtonEvent)
 	drv_floors := make(chan int)
 	drv_stop := make(chan bool)
-	orderDone := make(chan bool)
+	//orderDone := make(chan bool)
 	go elevio.PollButtons(drv_buttons)
 	go elevio.PollFloorSensor(drv_floors)
 	go elevio.PollStopButton(drv_stop)
 	println("HERE")
 
 	for {
-		//go FSM()
+		go FSM()
 		select {
 		case floor := <-drv_floors:
 			println("updating floor")
@@ -35,10 +36,10 @@ func InternalControl() {
 			println("new order")
 			AddOrder(order.Floor, order.Button)
 			printQueue()
-		case a := <-orderDone:
-			if a {
-				DeleteOrder(floor)
-			}
+		/*case a := <-orderDone:
+		if a {
+			DeleteOrder(floor)
+		}*/
 		default:
 			//fmt.Println("TAKABOOM")
 		}
