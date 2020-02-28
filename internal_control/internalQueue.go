@@ -1,19 +1,43 @@
 package internal_control
 
-import "../hardware/driver-go/elevio"
+import (
+	"fmt"
 
+	"../hardware/driver-go/elevio"
+)
 
-var numFloors int = 4	
-var internalQueue [3][numFloors]int
+const numFloors int = 4
+
+const numButtons int = 3
+
+var internalQueue [numButtons][numFloors]int
 
 type Button struct {
 	Dir   elevio.MotorDirection
 	Floor int
 }
 
+func printQueue() {
+	for button := 0; button < numButtons; button++ {
+		for floor := 0; floor < numFloors; floor++ {
+			fmt.Println(internalQueue[button][floor])
+		}
+	}
+}
 
-func ChooseDirection() Dir{
-	switch elevio.MotorDirection {
+func initQueue() {
+	for button := 0; button < numButtons; button++ {
+		for floor := 0; floor < numFloors; floor++ {
+			internalQueue[button][floor] = 0
+		}
+	}
+	fmt.Println("Initialised internal Queue")
+
+}
+
+/*
+func ChooseDirection(direction elevio.MotorDirection) elevio.MotorDirection {
+	switch direction {
 	case elevio.MD_Stop:
 		if ordersAbove(elevator) {
 			return elevio.MD_Up
@@ -42,8 +66,8 @@ func ChooseDirection() Dir{
 	}
 	return elevio.MD_Stop
 }
-
-func AddOrder(Floor int, typeOfOrder int) {
+*/
+func AddOrder(Floor int, typeOfOrder elevio.ButtonType) {
 	internalQueue[typeOfOrder][Floor] = 1
 }
 
@@ -53,31 +77,29 @@ func DeleteOrder(currentFloor int) {
 	}
 }
 
-func ordersInFloor(currentFloor int ) int{
+func ordersInFloor(currentFloor int) bool {
 	for i := 0; i < 3; i++ {
 		if internalQueue[i][currentFloor] == 1 {
-			return 1
+			return true
 		}
 	}
-	return 0
+	return false
 }
 
-
-func ordersAbove(currentFloor int) int {
+func ordersAbove(currentFloor int) bool {
 	for i := currentFloor + 1; i < numFloors-1; i++ {
 		if internalQueue[0][i] == 1 || internalQueue[1][i] == 1 || internalQueue[2][i] == 1 {
-			return 1
+			return true
 		}
 	}
-	return 0
+	return false
 }
 
-func ordersBelow(currentFloor int) int {
+func ordersBelow(currentFloor int) bool {
 	for i := currentFloor - 1; i > -1; i-- {
 		if internalQueue[0][i] == 1 || internalQueue[1][i] == 1 || internalQueue[2][i] == 1 {
-			return 1
+			return true
 		}
 	}
-	return 0
+	return false
 }
-

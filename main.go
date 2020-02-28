@@ -1,9 +1,11 @@
 package main
 
 import (
-	"time"
 	"fmt"
-	"./internal_control"
+	"time"
+
+	"./hardware/driver-go/elevio"
+	ic "./internal_control"
 )
 
 func timerCallback(timer *time.Timer, x int, wait chan int) {
@@ -16,6 +18,7 @@ func callback2(x int, wait chan int) {
 	fmt.Printf("Callback %d\n", x)
 	wait <- 0
 }
+
 /*
 func main() {
 	wait := make(chan int)
@@ -29,7 +32,12 @@ func main() {
 }
 */
 
+func main() {
+	ic.FsmInit()
+	fmt.Println("testing internal control")
 
-func main(){
-	go InternalControl()
+	ic.InternalControl()
+	fmt.Println("set dir")
+	var direction elevio.MotorDirection = elevio.MD_Up
+	elevio.SetMotorDirection(direction)
 }
