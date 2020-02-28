@@ -1,0 +1,37 @@
+package main
+
+import (
+	"fmt"
+	"time"
+
+	"./watchdog"
+)
+
+func main2() {
+	fmt.Println("Starting watchdog")
+	stop := make(chan bool)
+	go func() {
+		wd := watchdog.NewWatchdog(time.Second * 3)
+		i := 0
+		for {
+			select {
+			case <-wd.GetKickChannel():
+				fmt.Println("kick!")
+				i++
+				if i == 3 {
+					fmt.Println("STOPPING")
+					// stop the watchdog permanently
+					stop <- true
+					wd.Stop()
+					return
+				}
+			}
+		}
+	}()
+	wd2 := watchdog.NewWatchdog(time.Second * 3)
+	if <-wd2.GetKickChannel() {
+		fmt.Println("wd2")
+		wd2.Stop()
+	}
+	<-stop
+}
