@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"time"
+
+	"./supervisor/watchdog"
 )
 
 func timerCallback(timer *time.Timer, x int, wait chan int) {
@@ -16,6 +18,7 @@ func callback2(x int, wait chan int) {
 	wait <- 0
 }
 
+/*
 func main() {
 	wait := make(chan int)
 	x := 1
@@ -25,4 +28,8 @@ func main() {
 	// timer := time.NewTimer(1 * time.Second)
 	// go timerCallback(timer, 20, wait)
 	<-wait
+}*/
+
+func main() {
+	watchdog.Example()
 }

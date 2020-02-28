@@ -10,7 +10,7 @@ type Watchdog struct {
 	stopChan chan bool
 }
 
-// NewWatchdog ... ctor
+// NewWatchdog ... Create a new watchdog
 func NewWatchdog(timeout time.Duration) *Watchdog {
 	w := &Watchdog{
 		timer:    time.NewTimer(timeout),
