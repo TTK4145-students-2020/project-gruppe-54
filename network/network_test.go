@@ -13,6 +13,9 @@ import (
 )
 
 func TestInitSender(t *testing.T) {
+	testCh := make(chan TestMsg)
+	InitSender(testCh)
+
 	test_msg := TestMsg{}
 	test_msg2 := CostMsg{}
 	msg_ch := InitSender(test_msg)

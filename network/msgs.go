@@ -21,6 +21,12 @@ type TestMsg struct {
 	A int
 }
 
+type networkMsg interface {
+	a()
+}
+
+func (msg TestMsg) a() {}
+
 type TestMsgCh struct {
 	channel chan interface{}
 }

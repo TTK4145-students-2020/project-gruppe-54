@@ -33,13 +33,64 @@ func getPort(msgCh MsgCh) (string, error) {
 	}
 }
 
-func InitSender(msg interface{}) MsgCh {
-	msg_ch, err := makeChan(msg)
+// func InitSender(msg interface{}) MsgCh {
+// 	msg_ch, err := makeChan(msg)
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	go sendMsgWorker(msg_ch)
+// 	return msg_ch
+// }
+
+type testMsgTransmitter struct {
+	Channel chan TestMsg
+}
+
+type transmitter interface {
+	port() string
+	channel() chan networkMsg
+}
+
+func (trans testMsgTransmitter) port() string {
+	return TEST_MSG_PORT
+}
+
+func (trans testMsgTransmitter) channel() chan networkMsg {
+	return trans.Channel
+}
+
+func NewTestMsgTransmitter(testMsgCh chan TestMsg) testMsgTransmitter {
+	trans := testMsgTransmitter{testMsgCh}
+	go msgWorker(trans)
+	return trans
+}
+
+func msgWorker(trans transmitter) {
+	destinationAddress, err := net.ResolveUDPAddr("udp", BROADCAST_ADDR+":"+trans.port())
+	fmt.Println("Sending on", trans.port())
 	if err != nil {
 		log.Fatal(err)
 	}
-	go sendMsgWorker(msg_ch)
-	return msg_ch
+
+	connection, err := net.DialUDP("udp", nil, destinationAddress)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	defer connection.Close()
+	for {
+		var buffer bytes.Buffer
+		encoder := gob.NewEncoder(&buffer)
+		fmt.Println("Waiting for message to send...")
+		message := <-trans.Channel
+		err := encoder.Encode(&message)
+		fmt.Println("Sent message!")
+		if err != nil {
+			log.Fatalf("derp, %s\n", err)
+		}
+		connection.Write(buffer.Bytes())
+		buffer.Reset()
+	}
 }
 
 func sendMsgWorker(msgCh MsgCh) {
