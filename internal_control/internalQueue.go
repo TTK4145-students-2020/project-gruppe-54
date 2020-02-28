@@ -1,11 +1,13 @@
-package driver
-#import "./elevio"
+package internal_control
 
-numFloors = 4
+import "../hardware/driver-go/elevio"
+
+
+var numFloors int = 4	
 var internalQueue [3][numFloors]int
 
 type Button struct {
-	Dir   MotorDirection
+	Dir   elevio.MotorDirection
 	Floor int
 }
 
@@ -41,11 +43,11 @@ func ChooseDirection() Dir{
 	return elevio.MD_Stop
 }
 
-func addOrder(Floor int, typeOfOrder int) {
+func AddOrder(Floor int, typeOfOrder int) {
 	internalQueue[typeOfOrder][Floor] = 1
 }
 
-func deleteOrder(currentFloor int) {
+func DeleteOrder(currentFloor int) {
 	for i := 0; i < 3; i++ {
 		internalQueue[i][currentFloor] = 0
 	}
