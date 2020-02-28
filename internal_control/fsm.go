@@ -1,10 +1,9 @@
-package internal_control
+package internalcontrol
 
 import (
 	"time"
 
 	"../hardware/driver-go/elevio"
-	"../supervisor/watchdog"
 )
 
 var state int
@@ -18,54 +17,52 @@ const (
 )
 
 func FsmInit() {
-	state = IDLE
+	state = elevio.GetFloor()
 	Floor = 0
 }
 
 func FsmUpdateFloor(newFloor int) {
 	Floor = newFloor
-	println("Floor: %d%v", Floor)
 }
 
 func FSM() {
-	//println("Floor: ", Floor)
-	switch state {
-	case IDLE:
-		if ordersAbove(Floor) {
-			println("order above, current Floor: ", Floor)
-			elevio.SetMotorDirection(elevio.MD_Up)
-			state = DRIVE
-		}
-		if ordersBelow(Floor) {
-			println("order below, current Floor: ", Floor)
-			elevio.SetMotorDirection(elevio.MD_Down)
-			state = DRIVE
-		}
-	case DRIVE:
-
-		if ordersInFloor(Floor) {
+	for {
+		switch state {
+		case IDLE:
+			if ordersAbove(Floor) {
+				println("order above,going up, current Floor: ", Floor)
+				elevio.SetMotorDirection(elevio.MD_Up)
+				state = DRIVE
+			}
+			if ordersBelow(Floor) {
+				println("order below, going down, current Floor: ", Floor)
+				elevio.SetMotorDirection(elevio.MD_Down)
+				state = DRIVE
+			}
+		case DRIVE:
+			if ordersInFloor(Floor) {
+				elevio.SetMotorDirection(elevio.MD_Stop)
+				state = DOOR_OPEN
+			}
+		case DOOR_OPEN:
+			elevio.SetDoorOpenLamp(true)
 			elevio.SetMotorDirection(elevio.MD_Stop)
-			state = DOOR_OPEN
-		}
-	case DOOR_OPEN:
-
-		elevio.SetDoorOpenLamp(true)
-		wd := watchdog.NewWatchdog(time.Second * 3)
-		if <-wd.getKickChannel() {
+			println("DOOR OPEN")
+			DeleteOrder(Floor)
+			timer1 := time.NewTimer(2 * time.Second)
+			<-timer1.C
 			elevio.SetDoorOpenLamp(false)
-			wd.Stop()
-		}
-		orderDone <- true
-		if ordersAbove(Floor) {
-			elevio.SetMotorDirection(elevio.MD_Up)
-			direction = elevio.MD_Up
-			state = DRIVE
-		} else if ordersBelow(Floor) {
-			elevio.SetMotorDirection(elevio.MD_Down)
-			direction = elevio.MD_Down
-			state = DRIVE
-		} else {
-			state = IDLE
+			println("DOOR CLOSE")
+
+			if ordersAbove(Floor) {
+				elevio.SetMotorDirection(elevio.MD_Up)
+				state = DRIVE
+			} else if ordersBelow(Floor) {
+				elevio.SetMotorDirection(elevio.MD_Down)
+				state = DRIVE
+			} else {
+				state = IDLE
+			}
 		}
 	}
 }

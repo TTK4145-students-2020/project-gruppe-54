@@ -1,4 +1,4 @@
-package internal_control
+package internalcontrol
 
 import (
 	"../hardware/driver-go/elevio"
@@ -14,34 +14,26 @@ func InternalControl() {
 	initQueue()
 	printQueue()
 	FsmInit()
-	//var direction elevio.MotorDirection = elevio.MD_Up
-	//elevio.SetMotorDirection(direction)
-	drv_buttons := make(chan elevio.ButtonEvent)
-	drv_floors := make(chan int)
-	drv_stop := make(chan bool)
-	//orderDone := make(chan bool)
-	go elevio.PollButtons(drv_buttons)
-	go elevio.PollFloorSensor(drv_floors)
-	go elevio.PollStopButton(drv_stop)
-	println("HERE")
 
+	drvButtons := make(chan elevio.ButtonEvent)
+	drvFloors := make(chan int)
+	drvStop := make(chan bool)
+
+	go elevio.PollButtons(drvButtons)
+	go elevio.PollFloorSensor(drvFloors)
+	go elevio.PollStopButton(drvStop)
+
+	go FSM()
 	for {
-		go FSM()
 		select {
-		case floor := <-drv_floors:
-			println("updating floor")
+		case floor := <-drvFloors:
+			println("updating floor:", floor)
 			FsmUpdateFloor(floor)
-
-		case order := <-drv_buttons:
+			printQueue()
+		case order := <-drvButtons:
 			println("new order")
 			AddOrder(order.Floor, order.Button)
 			printQueue()
-		/*case a := <-orderDone:
-		if a {
-			DeleteOrder(floor)
-		}*/
-		default:
-			//fmt.Println("TAKABOOM")
 		}
 	}
 }

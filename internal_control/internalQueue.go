@@ -1,4 +1,4 @@
-package internal_control
+package internalcontrol
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"../hardware/driver-go/elevio"
 )
 
-const numFloors int = 4
+const numFloors int = 5 // 1-indeksert
 
 const numButtons int = 3
 
@@ -35,38 +35,6 @@ func initQueue() {
 
 }
 
-/*
-func ChooseDirection(direction elevio.MotorDirection) elevio.MotorDirection {
-	switch direction {
-	case elevio.MD_Stop:
-		if ordersAbove(elevator) {
-			return elevio.MD_Up
-		} else if ordersBelow(elevator) {
-			return elevio.MD_Down
-		} else {
-			return elevio.MD_Stop
-		}
-	case elevio.MD_Up:
-		if ordersAbove(elevator) {
-			return elevio.MD_Up
-		} else if ordersBelow(elevator) {
-			return elevio.MD_Down
-		} else {
-			return elevio.MD_Stop
-		}
-
-	case elevio.MD_Down:
-		if ordersBelow(elevator) {
-			return elevio.MD_Down
-		} else if ordersAbove(elevator) {
-			return elevio.MD_Up
-		} else {
-			return elevio.MD_Stop
-		}
-	}
-	return elevio.MD_Stop
-}
-*/
 func AddOrder(Floor int, typeOfOrder elevio.ButtonType) {
 	internalQueue[typeOfOrder][Floor] = 1
 }
