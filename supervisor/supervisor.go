@@ -1,47 +1,35 @@
 package supervisor
 
 import (
-	"fmt"
 	"time"
 
-	order "../order"
 	"./watchdog"
 )
 
 var timeoutPeriod int = 5
 
-type orderStruct = order.OrderStruct
-
-// NewOrder ... start timer on new order, sends the order as new order if kicked
-// returns nothing, lives its own life
-func WatchNewOrder(order orderStruct) {
-	t := order.Floor
-	fmt.Println("floor:", t)
-	NewWatchdog(time.Duration(timeoutPeriod))
-}
-
-func NewWatchdog(t time.Duration) {
-	wd := watchdog.NewWatchdog(time.Second * t)
-	if <-wd.GetKickChannel() {
-		fmt.Println("wd2")
-		orderNotCompleted()
+//WatchOrder ... watches an order
+//start as goroutine
+// still missing orderComplete functionality (needs connecting channel)
+func WatchOrder(isDone chan bool) {
+	wd := watchdog.NewWatchdog(time.Second * time.Duration(timeoutPeriod))
+	orderComplete := make(chan bool)
+	select { // whichever one of order complete or wd finished first
+	case <-wd.GetKickChannel():
+		isDone <- true
 		wd.Stop()
+	case <-orderComplete:
+		isDone <- false
 		return
 	}
 }
 
-func orderNotCompleted() {
-	//	send new order to orders
-	// missing functionality
-}
 func main() {
-	var a orderStruct
-	a.Floor = 5
 	//stop := make(chan bool)
-	go NewOrder(a)
-	for {
+	//go NewOrder(a)
+	//for {
 
-	}
+	//}
 	//stop <- true
 	//<-stop
 }

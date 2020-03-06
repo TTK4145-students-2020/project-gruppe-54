@@ -1,36 +1,56 @@
 package order
 
-//OrderStruct ... orderstruct
-type OrderStruct struct {
-	Floor int
-	
+import (
+	"fmt"
+
+	ic "../internal_control"
+	sv "../supervisor"
+)
+
+func listenForOrderCompleted() {
+	//orderComplete := make(chan bool)
+	// if complete
+	//orderComplete :=  <-true
 }
 
+func sendOrder(order ic.OrderStruct) {
+	// first send over network, needs work on
 
-//state matrix
+	isNotDone := make(chan bool, 1)
+	isDone := make(chan bool, 1)
 
+	go sv.WatchOrder(isNotDone)
+	// go network.listenforCOmpletemsg(isDone)
 
+	select {
+	case <-isNotDone:
+		fmt.Println("Order is not done")
+		delegateOrder(order) //redelegate
+	case <-isDone:
+		return
+	}
+}
 
-//func orderComplete
+func delegateOrder(order ic.OrderStruct) {
+	//chosenElev = lowestCost()
+	//sendOrder(chosenElev)
+}
 
-//func receiveOrder ...
-	//make chan order
-	//start watchdog
-
-	//order complete
-
-
-func delegateOrders() {
-	orders := make(chan elevio.ButtonEvent)
+func delegateOrders() {
+	newOrders := make(chan ic.OrderStruct)
 	for {
 		select {
-			case newOrder := <-orders:
-				chooseElevator()
-				
+		case newOrder := <-newOrders:
+			go delegateOrder(newOrder)
 		}
 	}
 }
-func chooseElevator() int{
-	GetCostFuction
 
+func receiveOrders() {
+
+}
+
+func OrderMain() {
+	go delegateOrders()
+	go receiveOrders()
 }

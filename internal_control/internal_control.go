@@ -3,37 +3,41 @@ package internalcontrol
 import (
 	"../hardware/driver-go/elevio"
 )
-type Order struct {
-	button ButtonType
-	floor  int
+
+//OrderStruct ... orderstruct
+type OrderStruct struct {
+	Floor  int
+	button OrderType
 }
 
+// OrderType ... type of order
+type OrderType int
+
 const (
-	HallUp ButtonType = 0
+	HallUp OrderType = 0
 	HallDn           = 1
 	Cab              = 2
 )
 
-// ButtonTypeToOrderTypeMap solves the trouble of having two enums
-var ButtonTypeToOrderTypeMap = map[elevio.ButtonType]OrderType{
+// ButtonTypeMap ... maps buttontype to ordertype
+var ButtonTypeMap = map[elevio.ButtonType]OrderType{
 	elevio.BT_HallUp:   HallUp,
 	elevio.BT_HallDown: HallDn,
 	elevio.BT_Cab:      Cab,
 }
 
-
-type MotorDirection int
+type ElevatorDirection int
 
 const (
-	Stop MotorDirection = 0
-	Down                = -1
-	Up 					= 1
+	Stop ElevatorDirection = 0
+	Down                   = -1
+	Up                     = 1
 )
-
-var MotorDirectionMap = map[elevio.ButtonType]OrderType{
-	elevio.MotorDirection.MD_stop:   HallUp,
-	elevio.BT_HallDown: HallDn,
-	elevio.BT_Cab:      Cab,
+// ElevatorDirectionMap ... maps elevatorDirection to MotorDirection
+var ElevatorDirectionMap = map[elevio.MotorDirection]ElevatorDirection{
+	elevio.MD_Stop: Stop,
+	elevio.MD_Down: Down,
+	elevio.MD_Up:   Up,
 }
 
 // InternalControl .. Responsible for internal control of a single elevator
@@ -44,13 +48,13 @@ func InternalControl() {
 	elevio.Init("localhost:15657", numFloors)
 
 	initQueue()
-	//printQueue()
 	FsmInit()
 
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
 	drvStop := make(chan bool)
 
+	newOrders := make(chan elevio.ButtonEvent)
 	go elevio.PollButtons(drvButtons)
 	go elevio.PollFloorSensor(drvFloors)
 	go elevio.PollStopButton(drvStop)
@@ -61,9 +65,11 @@ func InternalControl() {
 		case floor := <-drvFloors:
 			//println("updating floor:", floor)
 			FsmUpdateFloor(floor)
-		case order := <-drvButtons:
+		case drvOrder := <-drvButtons:
 			//println("new order")
-			AddOrder(order.Floor, order.Button)
+			newOrders <- drvOrder
+			//AddOrder(drvOrder.Floor, drvOrder.Button)
+
 		}
 	}
 }
