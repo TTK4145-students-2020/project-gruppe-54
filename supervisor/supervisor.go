@@ -3,41 +3,33 @@ package supervisor
 import (
 	"time"
 
-	order "../order"
 	"./watchdog"
 )
 
 var timeoutPeriod int = 5
 
-type orderStruct = order.OrderStruct
-
 //WatchOrder ... watches an order
 //start as goroutine
 // still missing orderComplete functionality (needs connecting channel)
-func WatchOrder() {
-	wd := watchdog.NewWatchdog(time.Second * timeoutPeriod)
+func WatchOrder(isDone chan bool) {
+	wd := watchdog.NewWatchdog(time.Second * time.Duration(timeoutPeriod))
 	orderComplete := make(chan bool)
-	select {
+	select { // whichever one of order complete or wd finished first
 	case <-wd.GetKickChannel():
-		resendOrder(order)
+		isDone <- true
 		wd.Stop()
-	case <-orderCompleted():
+	case <-orderComplete:
+		isDone <- false
 		return
 	}
 }
 
-func resendOrder(order orderStruct) {
-	newOrders := make(chan elevio.ButtonEvent)
-	newOrders <- order
-}
 func main() {
-	var a orderStruct
-	a.Floor = 5
 	//stop := make(chan bool)
-	go NewOrder(a)
-	for {
+	//go NewOrder(a)
+	//for {
 
-	}
+	//}
 	//stop <- true
 	//<-stop
 }

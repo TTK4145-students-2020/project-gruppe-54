@@ -1,57 +1,56 @@
 package order
 
-import(
+import (
 	"fmt"
-	"../supervisor"
+
+	ic "../internal_control"
+	sv "../supervisor"
 )
 
-//OrderStruct ... orderstruct
-type OrderStruct struct {
-	Floor int
-	
+func listenForOrderCompleted() {
+	//orderComplete := make(chan bool)
+	// if complete
+	//orderComplete :=  <-true
 }
 
+func sendOrder(order ic.OrderStruct) {
+	// first send over network, needs work on
 
-//state matrix
+	isNotDone := make(chan bool, 1)
+	isDone := make(chan bool, 1)
 
+	go sv.WatchOrder(isNotDone)
+	// go network.listenforCOmpletemsg(isDone)
 
-
-func listenForOrderCompleted(){
-	
+	select {
+	case <-isNotDone:
+		fmt.Println("Order is not done")
+		delegateOrder(order) //redelegate
+	case <-isDone:
+		return
+	}
 }
 
-//func receiveOrder ...
-	//make chan order
-	//start watchdog
-
-	//order complete
-
-func sendOrder(elev int){
-	go WatchOrder() // does everything by itself, no need to check on it.. resends order if it doesnt receive finishedoRder
+func delegateOrder(order ic.OrderStruct) {
+	//chosenElev = lowestCost()
+	//sendOrder(chosenElev)
 }
 
-func delegateOrder(order OrderStruct){
-	chosenElev = lowestCost()
-	sendOrder(chosenElev)
-	WatchOrder()
-}
-
-func delegateOrders() {
-	newOrders := make(chan elevio.ButtonEvent)
+func delegateOrders() {
+	newOrders := make(chan ic.OrderStruct)
 	for {
 		select {
-			case newOrder := <-newOrders:
-				delegateOrder(newOrder)				
+		case newOrder := <-newOrders:
+			go delegateOrder(newOrder)
 		}
 	}
 }
 
-
-func receiveOrders(){
+func receiveOrders() {
 
 }
 
-func mainOrderthing(){
+func OrderMain() {
 	go delegateOrders()
 	go receiveOrders()
 }

@@ -1,7 +1,9 @@
+package order
 
-func calculateCost(order Order) int{
-	cost = order.floor - getFloor() // Må lage getFloor, getDirection 
-	if cost == 0 && getDirection() != MotorDirection.MD_Stop{
+/*
+func calculateCost(order Order) int {
+	cost = order.floor - getFloor() // Må lage getFloor, getDirection
+	if cost == 0 && getDirection() != MotorDirection.MD_Stop {
 		cost += 4
 	}
 	if cost > 0 && getDirection() == MotorDirection.MD_Down {
@@ -9,16 +11,17 @@ func calculateCost(order Order) int{
 	}
 	if cost < 0 && getDirection() == MotorDirection.MD_Up {
 		cost += 3
-	} 
-	if cost != 0 && getDirection() == MotorDirection.MD_Stop{
+	}
+	if cost != 0 && getDirection() == MotorDirection.MD_Stop {
 		cost += 1
 	}
 	return cost
 }
-
+*/
 //getCostFuction
 
-sendCost(order Order, id Id) {
-	cost = calculateCost(order)
-	// 
-}
+//func sendCost(order Order, id Id) {
+//	id = tits
+//	cost = calculateCost(order)
+//
+//}

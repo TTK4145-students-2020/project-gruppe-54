@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"os"
 	"time"
+
+	ic "./internal_control"
+	order "./order"
 )
 
 func timerCallback(timer *time.Timer, x int, wait chan int) {
@@ -26,7 +29,7 @@ func main() {
 	})
 	// timer := time.NewTimer(1 * time.Second)
 	// go timerCallback(timer, 20, wait)
-	<-wait
+	<-waita
 }
 
 func main() {
@@ -36,8 +39,8 @@ func main() {
 
 func main() {
 	//fmt.Println("testing internal control")
-	//ic.InternalControl()
-
+	ic.InternalControl()
+	order.OrderMain()
 	ID := os.Args[1:2]
 	fmt.Println(ID)
 }
