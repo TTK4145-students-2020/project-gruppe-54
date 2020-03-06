@@ -9,17 +9,12 @@ import (
 var timeoutPeriod int = 5
 
 //WatchOrder ... watches an order
-//start as goroutine
-// still missing orderComplete functionality (needs connecting channel)
-func WatchOrder(isDone chan bool) {
+func WatchOrder(isNotDone chan bool) {
 	wd := watchdog.NewWatchdog(time.Second * time.Duration(timeoutPeriod))
-	orderComplete := make(chan bool)
 	select { // whichever one of order complete or wd finished first
 	case <-wd.GetKickChannel():
-		isDone <- true
+		isNotDone <- true
 		wd.Stop()
-	case <-orderComplete:
-		isDone <- false
 		return
 	}
 }

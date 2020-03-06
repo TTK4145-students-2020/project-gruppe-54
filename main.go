@@ -5,8 +5,9 @@ import (
 	"os"
 	"time"
 
+	"./hardware/driver-go/elevio"
 	ic "./internal_control"
-	order "./order"
+	"./order"
 )
 
 func timerCallback(timer *time.Timer, x int, wait chan int) {
@@ -39,8 +40,10 @@ func main() {
 
 func main() {
 	//fmt.Println("testing internal control")
-	ic.InternalControl()
-	order.OrderMain()
+	newOrders := make(chan elevio.ButtonEvent)
+
+	go order.DelegateOrders(newOrders)
+	ic.InternalControl(newOrders)
 	ID := os.Args[1:2]
 	fmt.Println(ID)
 }

@@ -1,8 +1,9 @@
 package order
 
 /*
-func calculateCost(order Order) int {
-	cost = order.floor - getFloor() // Må lage getFloor, getDirection
+func calculateCost(order elevio.ButtonEvent) int {
+	// add something for order.ButtonType == BT_Cab e.g. extremely high as it should
+	var cost = order.Floor - elevio.GetFloor() // Må lage getFloor, getDirection
 	if cost == 0 && getDirection() != MotorDirection.MD_Stop {
 		cost += 4
 	}
@@ -13,7 +14,7 @@ func calculateCost(order Order) int {
 		cost += 3
 	}
 	if cost != 0 && getDirection() == MotorDirection.MD_Stop {
-		cost += 1
+		cost++
 	}
 	return cost
 }

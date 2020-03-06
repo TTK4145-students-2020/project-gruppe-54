@@ -17,8 +17,11 @@ const (
 )
 
 func FsmInit() {
-	state = elevio.GetFloor()
-	Floor = 0
+	state = 0
+	Floor = elevio.GetFloor()
+	if Floor == -1 {
+		Floor = 0
+	}
 }
 
 func FsmUpdateFloor(newFloor int) {

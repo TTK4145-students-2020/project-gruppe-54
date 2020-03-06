@@ -35,8 +35,9 @@ func initQueue() {
 
 }
 
-func AddOrder(Floor int, typeOfOrder elevio.ButtonType) {
-	internalQueue[typeOfOrder][Floor] = 1
+func AddOrder(order elevio.ButtonEvent) {
+	println("Adding order")
+	internalQueue[order.Button][order.Floor] = 1
 }
 
 func DeleteOrder(currentFloor int) {

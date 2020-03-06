@@ -1,5 +1,5 @@
 package order
 
-initOrderMatrix(numNodes int, numFloors int){
-	
+func initOrderMatrix(numNodes int, numFloors int) {
+
 }
