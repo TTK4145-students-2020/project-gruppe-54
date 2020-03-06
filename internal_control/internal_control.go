@@ -12,7 +12,7 @@ func InternalControl() {
 	elevio.Init("localhost:15657", numFloors)
 
 	initQueue()
-	printQueue()
+	//printQueue()
 	FsmInit()
 
 	drvButtons := make(chan elevio.ButtonEvent)
@@ -27,13 +27,11 @@ func InternalControl() {
 	for {
 		select {
 		case floor := <-drvFloors:
-			println("updating floor:", floor)
+			//println("updating floor:", floor)
 			FsmUpdateFloor(floor)
-			printQueue()
 		case order := <-drvButtons:
-			println("new order")
+			//println("new order")
 			AddOrder(order.Floor, order.Button)
-			printQueue()
 		}
 	}
 }

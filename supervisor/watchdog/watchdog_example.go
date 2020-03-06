@@ -1,17 +1,16 @@
-package main
+package watchdog
 
 import (
 	"fmt"
 	"time"
-
-	"./watchdog"
 )
 
-func main2() {
+// Example .. Showing an example of how the watchdog can be implemented
+func Example() {
 	fmt.Println("Starting watchdog")
 	stop := make(chan bool)
 	go func() {
-		wd := watchdog.NewWatchdog(time.Second * 3)
+		wd := NewWatchdog(time.Second * 3)
 		i := 0
 		for {
 			select {
@@ -28,7 +27,7 @@ func main2() {
 			}
 		}
 	}()
-	wd2 := watchdog.NewWatchdog(time.Second * 3)
+	wd2 := NewWatchdog(time.Second * 3)
 	if <-wd2.GetKickChannel() {
 		fmt.Println("wd2")
 		wd2.Stop()
