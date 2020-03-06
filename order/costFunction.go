@@ -18,6 +18,7 @@ func calculateCost(order Order) int{
 
 //getCostFuction
 
-sendCost(order Order) {
-	
+sendCost(order Order, id Id) {
+	cost = calculateCost(order)
+	// 
 }
