@@ -18,3 +18,19 @@ type OrderStruct struct {
 	//start watchdog
 
 	//order complete
+
+
+func delegateOrders() {
+	orders := make(chan elevio.ButtonEvent)
+	for {
+		select {
+			case newOrder := <-orders:
+				chooseElevator()
+				
+		}
+	}
+}
+func chooseElevator() int{
+	GetCostFuction
+
+}

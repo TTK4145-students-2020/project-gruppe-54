@@ -1,7 +1,13 @@
-
+package order
 
 //Calculate cost function
 
-// getCostFuction
+func calculateCostFunction() int {
+
+}
+
+func GetCostFuctions() int {
+
+}
 
 //sendCostFunction
