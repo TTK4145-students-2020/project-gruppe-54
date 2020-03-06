@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"time"
-
-	ic "./internal_control"
-	"./supervisor/watchdog"
 )
 
 func timerCallback(timer *time.Timer, x int, wait chan int) {
@@ -29,7 +27,7 @@ func main() {
 	// timer := time.NewTimer(1 * time.Second)
 	// go timerCallback(timer, 20, wait)
 	<-wait
-}*/
+}
 
 func main() {
 	watchdog.Example()
@@ -37,6 +35,9 @@ func main() {
 */
 
 func main() {
-	fmt.Println("testing internal control")
-	ic.InternalControl()
+	//fmt.Println("testing internal control")
+	//ic.InternalControl()
+
+	ID := os.Args[1:2]
+	fmt.Println(ID)
 }

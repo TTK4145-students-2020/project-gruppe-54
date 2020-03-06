@@ -1,5 +1,10 @@
 package order
 
+import(
+	"fmt"
+	"../supervisor"
+)
+
 //OrderStruct ... orderstruct
 type OrderStruct struct {
 	Floor int
@@ -11,7 +16,9 @@ type OrderStruct struct {
 
 
 
-//func orderComplete
+func listenForOrderCompleted(){
+	
+}
 
 //func receiveOrder ...
 	//make chan order
@@ -19,18 +26,32 @@ type OrderStruct struct {
 
 	//order complete
 
+func sendOrder(elev int){
+	go WatchOrder() // does everything by itself, no need to check on it.. resends order if it doesnt receive finishedoRder
+}
+
+func delegateOrder(order OrderStruct){
+	chosenElev = lowestCost()
+	sendOrder(chosenElev)
+	WatchOrder()
+}
 
 func delegateOrders() {
-	orders := make(chan elevio.ButtonEvent)
+	newOrders := make(chan elevio.ButtonEvent)
 	for {
 		select {
-			case newOrder := <-orders:
-				chooseElevator()
-				
+			case newOrder := <-newOrders:
+				delegateOrder(newOrder)				
 		}
 	}
 }
-func chooseElevator() int{
-	GetCostFuction
 
+
+func receiveOrders(){
+
+}
+
+func mainOrderthing(){
+	go delegateOrders()
+	go receiveOrders()
 }
