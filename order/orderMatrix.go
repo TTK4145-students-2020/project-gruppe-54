@@ -22,7 +22,7 @@ func printOrderMatrix( orderMatrix [][]int){
 		counter++
 		//counter2 := 0
 		for _, y := range x {
-			//fmt.Print(orderTypes[counter2])
+			//fmt.Print(orderTypes[counter2])adf
 			fmt.Print(y, " ")
 		}
 		fmt.Print("]\n")
