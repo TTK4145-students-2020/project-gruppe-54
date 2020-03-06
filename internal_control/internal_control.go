@@ -3,6 +3,38 @@ package internalcontrol
 import (
 	"../hardware/driver-go/elevio"
 )
+type Order struct {
+	button ButtonType
+	floor  int
+}
+
+const (
+	HallUp ButtonType = 0
+	HallDn           = 1
+	Cab              = 2
+)
+
+// ButtonTypeToOrderTypeMap solves the trouble of having two enums
+var ButtonTypeToOrderTypeMap = map[elevio.ButtonType]OrderType{
+	elevio.BT_HallUp:   HallUp,
+	elevio.BT_HallDown: HallDn,
+	elevio.BT_Cab:      Cab,
+}
+
+
+type MotorDirection int
+
+const (
+	Stop MotorDirection = 0
+	Down                = -1
+	Up 					= 1
+)
+
+var MotorDirectionMap = map[elevio.ButtonType]OrderType{
+	elevio.MotorDirection.MD_stop:   HallUp,
+	elevio.BT_HallDown: HallDn,
+	elevio.BT_Cab:      Cab,
+}
 
 // InternalControl .. Responsible for internal control of a single elevator
 func InternalControl() {
