@@ -6,3 +6,6 @@
 
   Why does no one like SQLrillex?
   He keeps dropping the database
+
+
+  TODO: make a separate file with all structs

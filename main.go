@@ -5,10 +5,21 @@ import (
 	"os"
 	"time"
 
+	ch "./configuration"
 	"./hardware/driver-go/elevio"
 	ic "./internal_control"
 	"./order"
 )
+
+func initChannels() ch.Channels {
+	chans := ch.Channels{
+		DelegateOrder:     make(chan elevio.ButtonEvent),
+		OrderCompleted:    make(chan bool),
+		TakingOrder:       make(chan bool),
+		TakeExternalOrder: make(chan elevio.ButtonEvent),
+	}
+	return chans
+}
 
 func timerCallback(timer *time.Timer, x int, wait chan int) {
 	<-(*timer).C
@@ -40,10 +51,10 @@ func main() {
 
 func main() {
 	//fmt.Println("testing internal control")
-	newOrders := make(chan elevio.ButtonEvent)
-
-	go order.DelegateOrders(newOrders)
-	ic.InternalControl(newOrders)
+	//order.initOrderMatrix(numNodes, numFloors)
+	var chans = initChannels()
+	go order.ControlOrders(chans)
+	ic.InternalControl(chans)
 	ID := os.Args[1:2]
 	fmt.Println(ID)
 }
