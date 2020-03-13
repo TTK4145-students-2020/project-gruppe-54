@@ -4,7 +4,7 @@ import (
 	"fmt"
 )
 
-func initOrderMatrix(numNodes int, numFloors int) [][]int {
+func initOrderMatrix(numNodes int, numFloors int) (<-chan [][]int,  chan<- [][]int) {
 	rows := numFloors * 3
 	coloumns := numNodes
 	orderMatrix := make([][]int, coloumns)
@@ -16,6 +16,10 @@ func initOrderMatrix(numNodes int, numFloors int) [][]int {
 
 	}
 	return orderMatrix
+}
+
+func orderMatrixServer([][]int orderMatrix, updateOrderMatrix <-chan [][]int, currentOrderMatrix  chan<- [][]int) {
+	
 }
 
 func printOrderMatrix(orderMatrix [][]int) {
