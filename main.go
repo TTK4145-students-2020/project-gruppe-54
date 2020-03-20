@@ -52,7 +52,7 @@ func main() {
 func main() {
 	//fmt.Println("testing internal control")
 	//order.initOrderMatrix(numNodes, numFloors)
-	var chans = initChannels()
+	chans := initChannels()
 	go order.ControlOrders(chans)
 	ic.InternalControl(chans)
 	ID := os.Args[1:2]

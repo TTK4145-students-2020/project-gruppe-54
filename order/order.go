@@ -3,22 +3,56 @@ package order
 import (
 	"fmt"
 
-	"time"
-
 	c "../configuration"
 	"../hardware/driver-go/elevio"
 	"../network/msgs"
 	sv "../supervisor"
+	"github.com/google/go-cmp/cmp"
 )
 
 var numNodes int = 3
 var numFloors int = 4
 
-func listenForOrderCompleted(isDone chan bool) {
-	complete := true //Odin sett in noe her om at den ser på matrisen og hvis den får inn at det er utført blir det true
+func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, giveUp chan bool) {
+	orderComplete := false //Odin sett in noe her om at den ser på matrisen og hvis den får inn at det er utført blir det true
 
-	if complete {
-		isDone <- true
+	// Listen for diff in order tensor
+	orderTensorDiffMsg := msgs.OrderTensorDiffMsg{}
+	receivedDiff := make(chan msgs.OrderTensorDiffMsg)
+	killPolling := make(chan bool)
+
+	defer func() {
+		killPolling <- true
+		if orderComplete {
+			isDone <- true
+		}
+	}()
+
+	// Start polling for diff to tensor
+	go func() {
+		for {
+			err := orderTensorDiffMsg.Listen()
+			if err != nil {
+				continue
+			}
+			receivedDiff <- orderTensorDiffMsg
+			if <-killPolling {
+				return
+			}
+		}
+	}()
+ListenLoop:
+	for {
+		select {
+		case receivedDiffMsg := <-receivedDiff:
+			if cmp.Equal(receivedDiffMsg.Order, order) && receivedDiffMsg.Diff == msgs.REMOVE {
+				orderComplete = true
+				break ListenLoop
+			}
+		case <-giveUp:
+			orderComplete = false
+			break ListenLoop
+		}
 	}
 }
 
@@ -30,16 +64,13 @@ func sendOrder(order elevio.ButtonEvent, ch c.Channels) {
 	isDone := make(chan bool, 1)
 
 	go sv.WatchOrder(isNotDone)
-	go listenForOrderCompleted(isDone)
-	for {
-		select {
-		case <-isNotDone:
-			fmt.Println("Order is not done")
-			delegateOrder(order, ch) //redelegate
-		case <-isDone:
-			return
-		}
-		time.Sleep(50 * time.Millisecond)
+	go listenForOrderCompleted(order, isDone, isNotDone)
+	select {
+	case <-isNotDone:
+		fmt.Println("Order is not done")
+		delegateOrder(order, ch) //redelegate
+	case <-isDone:
+		return
 	}
 }
 
