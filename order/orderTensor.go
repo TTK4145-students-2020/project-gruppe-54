@@ -10,11 +10,14 @@ type Node struct {
 	Floor []FloorOrders
 }
 
-func initOrderTensor(numNodes int, numFloors int) (<-chan []Node, chan<- []Node) {
+type UpdateOrderTensorChan <-chan []Node
+type CurrentOrderTensorChan chan<- []Node
+
+func InitOrderTensor(numNodes int, numFloors int) (UpdateOrderTensorChan, CurrentOrderTensorChan) {
 	orderTensor := make([]Node, numNodes)
-	for i := 0; i < 4; i++ {
+	for i := 0; i < numNodes; i++ {
 		orderTensor[i].Floor = make([]FloorOrders, numFloors)
-		for floor := 0; floor < 3; floor++ {
+		for floor := 0; floor < numFloors; floor++ {
 			orderTensor[i].Floor[floor] = FloorOrders{
 				Inside:      false,
 				OutsideUp:   false,
@@ -22,13 +25,13 @@ func initOrderTensor(numNodes int, numFloors int) (<-chan []Node, chan<- []Node)
 			}
 		}
 	}
-	updateOrderTensor := make(<-chan []Node, 1)
-	currentOrderTensor := make(chan<- []Node, 1)
+	updateOrderTensor := make(UpdateOrderTensorChan, 1)
+	currentOrderTensor := make(CurrentOrderTensorChan, 1)
 	go orderTensorServer(orderTensor, updateOrderTensor, currentOrderTensor)
 	return updateOrderTensor, currentOrderTensor
 }
 
-func orderTensorServer(orderTensor []Node, updateOrderTensor <-chan []Node, currentOrderTensor chan<- []Node) {
+func orderTensorServer(orderTensor []Node, updateOrderTensor UpdateOrderTensorChan, currentOrderTensor CurrentOrderTensorChan) {
 	for {
 		select {
 		case <-updateOrderTensor:
