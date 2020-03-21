@@ -10,3 +10,9 @@ type Channels struct {
 	TakingOrder       chan bool
 	TakeExternalOrder chan elevio.ButtonEvent
 }
+
+type MetaData struct {
+	NumNodes  int
+	NumFloors int
+	Id        int
+}
