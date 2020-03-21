@@ -10,6 +10,7 @@ import (
 )
 
 func TestSendAndListen(t *testing.T) {
+	InitNetwork()
 	a := 100
 	sender := msgs.TestMsg{A: a}
 	receiver := msgs.TestMsg{}
