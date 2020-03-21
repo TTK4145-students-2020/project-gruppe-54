@@ -2,6 +2,7 @@ package order
 
 import (
 	"fmt"
+	"math"
 
 	c "../configuration"
 	"../hardware/driver-go/elevio"
@@ -45,7 +46,7 @@ ListenLoop:
 	for {
 		select {
 		case receivedDiffMsg := <-receivedDiff:
-			if cmp.Equal(receivedDiffMsg.Order, order) && receivedDiffMsg.Diff == msgs.REMOVE {
+			if cmp.Equal(receivedDiffMsg.Order, order) && receivedDiffMsg.Diff == msgs.DIFF_REMOVE {
 				orderComplete = true
 				break ListenLoop
 			}
@@ -68,13 +69,26 @@ func sendOrder(order elevio.ButtonEvent, ch c.Channels) {
 	select {
 	case <-isNotDone:
 		fmt.Println("Order is not done")
-		delegateOrder(order, ch) //redelegate
+		// FIXME: Dirty fix
+		delegateOrder(order, ch, 3) //redelegate
 	case <-isDone:
-		return
+		// Nothing to do
 	}
 }
 
-func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
+func delegateOrder(order elevio.ButtonEvent, ch c.Channels, numNodes int) {
+	// TODO:
+	// 1. Send order to all PCs on network
+	// 2. Wait for cost in return, needs to count or return after some time
+	// 3. If it deems itself as most fit, it passes the order to itself. Anyhow, a watchdog is created to ensure the order is completed
+
+	// 1.
+	orderMsg := msgs.OrderMsg{Order: order}
+	orderMsg.Send()
+
+	// 2.
+	costs := collectCosts(numNodes)
+
 	//chosenElev = lowestCost()
 	//sendOrder(chosenElev)
 	fmt.Println("delegating")
@@ -82,14 +96,29 @@ func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
 
 }
 
+func collectCosts(numNodes int) []uint {
+	costs := make([]uint, numNodes)
+	for i := 0; i < numNodes; i++ {
+		costs[i] = uint(math.Inf(0)) // Initialize all costs to infinite
+	}
+
+	return costs
+}
+
 //ControlOrders ... Delegates new orders it receives on channel newOrders
-func ControlOrders(ch c.Channels) {
-	go checkForExternalOrders(ch) //Continously check for new orders given to this elev
+func ControlOrders(ch c.Channels, metaDataChan <-chan c.MetaData) {
+	metaData := <-metaDataChan
+	numNodes, _, ID := metaData.NumNodes, metaData.NumFloors, metaData.Id
+	// ID := metaData.Id
+
+	// updateOrderTensorCh, currentOrderTensorCh := InitOrderTensor(numNodes, numFloors)
+
+	go checkForExternalOrders(ch, ID) //Continously check for new orders given to this elev
 	for {
 		select {
 		case newOrder := <-ch.DelegateOrder:
 			//fmt.Println("New order in order.go!")
-			go delegateOrder(newOrder, ch)
+			go delegateOrder(newOrder, ch, numNodes)
 		case <-ch.TakingOrder: // the external order has been taken
 			//UpdateMatrix()          // this needs functionality
 			//ch.TakingOrder <- false // reset takingorder
@@ -98,11 +127,16 @@ func ControlOrders(ch c.Channels) {
 		}
 	}
 }
-func checkForExternalOrders(ch c.Channels) {
-	//odin fiks her
-	//check matrix
-	//update matrix so that others receive that the order is being processed
-	//if new order:
-	//ch.TakeExternalOrder <- order
 
+func checkForExternalOrders(ch c.Channels, ID int) {
+	newOrder := msgs.OrderMsg{}
+	for {
+		err := newOrder.Listen()
+		if err != nil {
+			continue
+		}
+		cost := calculateCost(newOrder.Order)
+		costMsg := msgs.CostMsg{Cost: cost, Id: ID}
+		costMsg.Send()
+	}
 }

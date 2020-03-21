@@ -23,7 +23,7 @@ import (
 // 	return cost
 // }
 
-func calculateCost(order elevio.ButtonEvent) int { return 0 }
+func calculateCost(order elevio.ButtonEvent) uint { return 0 }
 
 //getCostFuction
 
