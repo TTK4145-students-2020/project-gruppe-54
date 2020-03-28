@@ -17,6 +17,7 @@ const (
 )
 
 func FsmInit() {
+
 	state = 0
 	Floor = elevio.GetFloor()
 	if Floor == -1 {

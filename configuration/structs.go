@@ -6,8 +6,8 @@ import (
 
 type Channels struct {
 	DelegateOrder     chan elevio.ButtonEvent
-	OrderCompleted    chan bool
-	TakingOrder       chan bool
+	OrderCompleted    chan elevio.ButtonEvent
+	TakingOrder       chan elevio.ButtonEvent
 	TakeExternalOrder chan elevio.ButtonEvent
 	MetaData          <-chan MetaData
 }

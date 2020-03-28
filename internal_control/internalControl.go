@@ -30,7 +30,7 @@ func InternalControl(ch c.Channels) {
 			ch.DelegateOrder <- drvOrder //Delegate this order
 		case ExtOrder := <-ch.TakeExternalOrder:
 			AddOrder(ExtOrder)
-			ch.TakingOrder <- true //if nothing fails tell order it can update matrix..
+			ch.TakingOrder <- ExtOrder //if nothing fails tell order it can update matrix..
 		}
 
 	}

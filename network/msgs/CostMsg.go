@@ -6,7 +6,7 @@ import (
 
 type CostMsg struct {
 	Cost uint
-	id   int
+	Id   int
 }
 
 func (msg CostMsg) port() string {
@@ -18,11 +18,11 @@ func (msg CostMsg) Send() {
 }
 
 func (msg *CostMsg) setId(Id int) {
-	msg.id = Id
+	msg.Id = Id
 }
 
 func (msg CostMsg) GetId() int {
-	return msg.id
+	return msg.Id
 }
 
 func (msg *CostMsg) Listen() error {

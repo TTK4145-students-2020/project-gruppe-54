@@ -8,7 +8,7 @@ import (
 
 type OrderMsg struct {
 	Order elevio.ButtonEvent
-	id    int
+	Id    int
 }
 
 func (msg OrderMsg) port() string {
@@ -16,11 +16,11 @@ func (msg OrderMsg) port() string {
 }
 
 func (msg *OrderMsg) setId(Id int) {
-	msg.id = Id
+	msg.Id = Id
 }
 
 func (msg *OrderMsg) GetId() int {
-	return msg.id
+	return msg.Id
 }
 
 func (msg OrderMsg) Send() {

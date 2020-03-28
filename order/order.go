@@ -9,7 +9,6 @@ import (
 	"../hardware/driver-go/elevio"
 	"../network/msgs"
 	sv "../supervisor"
-	"github.com/google/go-cmp/cmp"
 )
 
 var numNodes int = 3
@@ -35,6 +34,7 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, giveUp 
 		for {
 			err := orderTensorDiffMsg.Listen()
 			if err != nil {
+				fmt.Printf("Waiting for complete order: %s\n", err)
 				continue
 			}
 			receivedDiff <- orderTensorDiffMsg
@@ -47,11 +47,13 @@ ListenLoop:
 	for {
 		select {
 		case receivedDiffMsg := <-receivedDiff:
-			if cmp.Equal(receivedDiffMsg.Order, order) && receivedDiffMsg.Diff == msgs.DIFF_REMOVE {
+			if equalOrders(receivedDiffMsg.Order, order) && receivedDiffMsg.Diff == msgs.DIFF_REMOVE {
+				fmt.Println("Order completed!")
 				orderComplete = true
 				break ListenLoop
 			}
 		case <-giveUp:
+			fmt.Println("Order not completed :(")
 			orderComplete = false
 			break ListenLoop
 		}
@@ -60,7 +62,10 @@ ListenLoop:
 
 func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
 	orderMsg := msgs.OrderMsg{Order: order}
-	orderMsg.Send()
+	for i := 0; i < 5; i++ {
+		orderMsg.Send()
+		time.Sleep(1 * time.Microsecond)
+	}
 
 	isNotDone := make(chan bool, 1)
 	isDone := make(chan bool, 1)
@@ -111,7 +116,7 @@ func collectCosts(numNodes int) []uint {
 		for {
 			select {
 			case newCostMsg := <-newCost:
-				if id := newCostMsg.GetId(); id > 0 && id < numNodes {
+				if id := newCostMsg.GetId(); id >= 0 && id < numNodes {
 					costs[id] = newCostMsg.Cost
 				}
 			case <-timer.C:
@@ -121,17 +126,21 @@ func collectCosts(numNodes int) []uint {
 		}
 	}()
 	go func() {
+		costMsg := msgs.CostMsg{}
 		for {
 			select {
 			case <-stopPolling:
+				fmt.Println("Stopped polling")
 				complete <- true
 				return
 			default:
-				costMsg := msgs.CostMsg{}
+				fmt.Println("Listening for costs")
 				err := costMsg.Listen()
 				if err != nil {
+					fmt.Printf("Error: %s\n", err)
 					continue
 				}
+				fmt.Printf("Received from %d\n", costMsg.GetId())
 				newCost <- costMsg
 			}
 		}
@@ -154,8 +163,9 @@ func ControlOrders(ch c.Channels) {
 			//fmt.Println("New order in order.go!")
 			// go delegateOrder(newOrder, ch)
 			go delegateOrder(newOrder, ch)
-		case <-ch.TakingOrder: // the external order has been taken
-
+		case orderTaken := <-ch.TakingOrder: // the external order has been taken
+			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{Order: orderTaken, Diff: msgs.DIFF_REMOVE}
+			orderTensorDiffMsg.Send()
 			//UpdateMatrix()          // this needs functionality
 			//ch.TakingOrder <- false // reset takingorder
 			//println("Taking order")
@@ -172,15 +182,16 @@ func checkForExternalOrders(ch c.Channels) {
 			continue
 		}
 		fmt.Printf("Received order: %+v\n", newOrder)
-		costs := collectCosts(metaData.NumNodes)
 		go func() {
 			cost := calculateCost(newOrder.Order)
 			costMsg := msgs.CostMsg{Cost: cost}
-			for i := 0; i < 5; i++ {
-				costMsg.Send()
-				time.Sleep(1 * time.Millisecond)
-			}
+			costMsg.Send()
+			fmt.Printf("Sending cost: %+v\n", costMsg)
+			// for i := 0; i < 5; i++ {
+			// }
+			// time.Sleep(5 * time.Millisecond)
 		}()
+		costs := collectCosts(metaData.NumNodes)
 		// Find minimum
 		min := uint(math.Inf(0))
 		minId := 0
@@ -193,8 +204,13 @@ func checkForExternalOrders(ch c.Channels) {
 			}
 		}
 		fmt.Printf("MinId: %d, MinCost: %d\n", minId, min)
-		if minId == metaData.Id {
+		// Needs to ensure that order is taken, if min is itself
+		if minId == metaData.Id || min == costs[metaData.Id] {
 			ch.TakeExternalOrder <- newOrder.Order
 		}
 	}
+}
+
+func equalOrders(order1, order2 elevio.ButtonEvent) bool {
+	return order1.Floor == order2.Floor && order1.Button == order2.Button
 }

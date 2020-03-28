@@ -28,8 +28,8 @@ func initMetaDataServer(metaData ch.MetaData) <-chan ch.MetaData {
 func initChannels(metaData ch.MetaData) ch.Channels {
 	chans := ch.Channels{
 		DelegateOrder:     make(chan elevio.ButtonEvent),
-		OrderCompleted:    make(chan bool),
-		TakingOrder:       make(chan bool),
+		OrderCompleted:    make(chan elevio.ButtonEvent),
+		TakingOrder:       make(chan elevio.ButtonEvent),
 		TakeExternalOrder: make(chan elevio.ButtonEvent),
 		MetaData:          initMetaDataServer(metaData),
 	}
