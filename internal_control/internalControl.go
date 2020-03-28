@@ -16,11 +16,12 @@ func InternalControl(ch c.Channels) {
 	drvButtons := make(chan elevio.ButtonEvent)
 	drvFloors := make(chan int)
 	drvStop := make(chan bool)
+	doorsOpen := make(chan int)
 
 	go elevio.PollButtons(drvButtons)
 	go elevio.PollFloorSensor(drvFloors)
 	go elevio.PollStopButton(drvStop)
-	go FSM()
+	go FSM(doorsOpen)
 	for {
 		select {
 		case floor := <-drvFloors: //Sensor senses a new floor
@@ -30,7 +31,22 @@ func InternalControl(ch c.Channels) {
 			ch.DelegateOrder <- drvOrder //Delegate this order
 		case ExtOrder := <-ch.TakeExternalOrder:
 			AddOrder(ExtOrder)
-			ch.TakingOrder <- ExtOrder //if nothing fails tell order it can update matrix..
+		case floor := <-doorsOpen:
+			order_OutsideUp_Completed := elevio.ButtonEvent{
+				Floor:  floor,
+				Button: elevio.BT_HallUp,
+			}
+			order_OutsideDown_Completed := elevio.ButtonEvent{
+				Floor:  floor,
+				Button: elevio.BT_HallDown,
+			}
+			order_Inside_Completed := elevio.ButtonEvent{
+				Floor:  floor,
+				Button: elevio.BT_Cab,
+			}
+			ch.TakingOrder <- order_OutsideUp_Completed
+			ch.TakingOrder <- order_OutsideDown_Completed
+			ch.TakingOrder <- order_Inside_Completed
 		}
 
 	}

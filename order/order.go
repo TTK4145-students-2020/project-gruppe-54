@@ -34,7 +34,6 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, giveUp 
 		for {
 			err := orderTensorDiffMsg.Listen()
 			if err != nil {
-				fmt.Printf("Waiting for complete order: %s\n", err)
 				continue
 			}
 			receivedDiff <- orderTensorDiffMsg
@@ -47,7 +46,7 @@ ListenLoop:
 	for {
 		select {
 		case receivedDiffMsg := <-receivedDiff:
-			if equalOrders(receivedDiffMsg.Order, order) && receivedDiffMsg.Diff == msgs.DIFF_REMOVE {
+			if receivedDiffMsg.Order.Floor == order.Floor && receivedDiffMsg.Diff == msgs.DIFF_REMOVE {
 				fmt.Println("Order completed!")
 				orderComplete = true
 				break ListenLoop
@@ -74,7 +73,7 @@ func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
 	go listenForOrderCompleted(order, isDone, isNotDone)
 	select {
 	case <-isNotDone:
-		fmt.Println("Order is not done")
+		fmt.Printf("Order %+v is not done\n", order)
 		// FIXME: Dirty fix
 		delegateOrder(order, ch) //redelegate
 	case <-isDone:
@@ -165,6 +164,7 @@ func ControlOrders(ch c.Channels) {
 			go delegateOrder(newOrder, ch)
 		case orderTaken := <-ch.TakingOrder: // the external order has been taken
 			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{Order: orderTaken, Diff: msgs.DIFF_REMOVE}
+			fmt.Printf("COMPLETED ORDER: %+v\n", orderTaken)
 			orderTensorDiffMsg.Send()
 			//UpdateMatrix()          // this needs functionality
 			//ch.TakingOrder <- false // reset takingorder

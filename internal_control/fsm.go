@@ -29,7 +29,7 @@ func FsmUpdateFloor(newFloor int) {
 	Floor = newFloor
 }
 
-func FSM() {
+func FSM(doorsOpen chan<- int) {
 	for {
 		switch state {
 		case IDLE:
@@ -43,6 +43,10 @@ func FSM() {
 				elevio.SetMotorDirection(elevio.MD_Down)
 				state = DRIVE
 			}
+			if ordersInFloor(Floor) {
+				//println("order below, going down, current Floor: ", Floor)
+				state = DOOR_OPEN
+			}
 		case DRIVE:
 			if ordersInFloor(Floor) { // this is the problem : the floor is being kept constant at e.g. 2 while its moving
 				elevio.SetMotorDirection(elevio.MD_Stop)
@@ -53,6 +57,7 @@ func FSM() {
 			elevio.SetMotorDirection(elevio.MD_Stop)
 			println("DOOR OPEN")
 			DeleteOrder(Floor)
+			doorsOpen <- Floor
 			timer1 := time.NewTimer(2 * time.Second)
 			<-timer1.C
 			elevio.SetDoorOpenLamp(false)
