@@ -29,6 +29,6 @@ func calculateCost(order elevio.ButtonEvent) uint { return 0 }
 
 func sendCost(order elevio.ButtonEvent, id int) {
 	cost := calculateCost(order)
-	costMsg := msgs.CostMsg{Cost: cost, Id: id}
+	costMsg := msgs.CostMsg{Cost: cost}
 	costMsg.Send()
 }

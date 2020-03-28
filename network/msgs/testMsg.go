@@ -1,28 +1,38 @@
 package msgs
 
-import "errors"
-
 type TestMsg struct {
-	A int
+	A  int
+	Id int
 }
 
 func (msg TestMsg) port() string {
 	return TEST_MSG_PORT
 }
 
-func (msg TestMsg) Send() {
-	send(&msg)
+func (msg *TestMsg) setId(Id int) {
+	msg.Id = Id
+}
+
+func (msg *TestMsg) GetId() int {
+	return msg.Id
+}
+
+func (msg *TestMsg) Send() {
+	sendTest(*msg)
 }
 
 func (msg *TestMsg) Listen() error {
-	m, err := listen(msg)
+	m, err := listenTest(*msg)
 	if err != nil {
 		return err
 	}
-	if m, ok := m.(*TestMsg); ok {
-		*msg = *m
-	} else {
-		return errors.New("failed casting to msg type after listen")
-	}
+	*msg = m
 	return nil
+}
+
+func (msg *TestMsg) Ack() {
+	ack := AckMsg{Msg: msg}
+	metaData := <-metaDataChanLocal
+	ack.setId(metaData.Id)
+	ack.Send()
 }

@@ -58,12 +58,13 @@ func main() {
 
 	fmt.Printf("\nInitialized with:\n\tID:\t%d\n\tNodes:\t%d\n\tFloors:\t%d\n\n", id, nodes, floors)
 
+	metaData := initMetaDataServer(nodes, floors, id)
+
 	chans := initChannels()
-	err := network.InitNetwork()
+	err := network.InitNetwork(metaData)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	metaData := initMetaDataServer(nodes, floors, id)
 
 	go order.ControlOrders(chans, metaData)
 	ic.InternalControl(chans)

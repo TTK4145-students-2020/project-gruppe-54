@@ -16,11 +16,19 @@ const (
 type OrderTensorDiffMsg struct {
 	Order elevio.ButtonEvent
 	Diff  OrderTensorDiff
-	ID    int
+	id    int
 }
 
 func (msg OrderTensorDiffMsg) port() string {
 	return ORDER_TENSOR_DIFF_MSG_PORT
+}
+
+func (msg *OrderTensorDiffMsg) setId(Id int) {
+	msg.id = Id
+}
+
+func (msg *OrderTensorDiffMsg) GetId() int {
+	return msg.id
 }
 
 func (msg OrderTensorDiffMsg) Send() {

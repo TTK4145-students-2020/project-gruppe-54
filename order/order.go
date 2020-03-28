@@ -136,7 +136,7 @@ func checkForExternalOrders(ch c.Channels, ID int) {
 			continue
 		}
 		cost := calculateCost(newOrder.Order)
-		costMsg := msgs.CostMsg{Cost: cost, Id: ID}
+		costMsg := msgs.CostMsg{Cost: cost}
 		costMsg.Send()
 	}
 }

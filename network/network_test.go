@@ -5,12 +5,25 @@ import (
 	"testing"
 	"time"
 
+	c "../configuration"
 	"./msgs"
-	"github.com/google/go-cmp/cmp"
 )
 
 func TestSendAndListen(t *testing.T) {
-	InitNetwork()
+
+	testMetaDataSender := c.MetaData{NumNodes: 2, NumFloors: 0, Id: 12}
+	testMetaDataReceiver := c.MetaData{NumNodes: 2, NumFloors: 0, Id: 1}
+
+	testMetaDataSenderChan := make(chan c.MetaData, 1)
+	testMetaDataReceiverChan := make(chan c.MetaData, 1)
+	go func() {
+		for {
+			testMetaDataSenderChan <- testMetaDataSender
+			testMetaDataReceiverChan <- testMetaDataReceiver
+		}
+	}()
+	msgs.InitTestMessage(testMetaDataSenderChan, testMetaDataReceiverChan)
+
 	a := 100
 	sender := msgs.TestMsg{A: a}
 	receiver := msgs.TestMsg{}
@@ -27,9 +40,9 @@ func TestSendAndListen(t *testing.T) {
 		sender.Send()
 	}
 	<-received
-	if !cmp.Equal(sender, receiver) {
-		t.Errorf("rec_msg not equal to test_msg\nrec_msg: %+v\ntest_msg: %+v\n", sender, receiver)
+	if sender.A != receiver.A {
+		t.Errorf("rec_msg not equal to test_msg\nrec_msg: A: %d, id: %d\ntest_msg: %+v\n", sender.A, sender.GetId(), receiver)
 	} else {
-		fmt.Printf("Success!\nSent: %+v\nReceived %+v\n", sender, receiver)
+		fmt.Printf("Success!\nSent: A: %d, id: %d\nReceived: A: %d, id: %d\n", sender.A, sender.GetId(), receiver.A, receiver.GetId())
 	}
 }
