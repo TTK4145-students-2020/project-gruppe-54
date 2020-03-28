@@ -29,10 +29,3 @@ func (msg *TestMsg) Listen() error {
 	*msg = m
 	return nil
 }
-
-func (msg *TestMsg) Ack() {
-	ack := AckMsg{Msg: msg}
-	metaData := <-metaDataChanLocal
-	ack.setId(metaData.Id)
-	ack.Send()
-}

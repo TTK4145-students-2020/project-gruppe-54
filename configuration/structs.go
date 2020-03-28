@@ -9,6 +9,7 @@ type Channels struct {
 	OrderCompleted    chan bool
 	TakingOrder       chan bool
 	TakeExternalOrder chan elevio.ButtonEvent
+	MetaData          <-chan MetaData
 }
 
 type MetaData struct {

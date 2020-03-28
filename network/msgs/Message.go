@@ -36,7 +36,6 @@ const (
 type messager interface {
 	Send()
 	Listen() error
-	Ack()
 	port() string
 	setId(Id int)
 	GetId() int
@@ -113,11 +112,6 @@ func listenTest(msg TestMsg) (TestMsg, error) {
 	if err != nil {
 		return msg, err
 	}
-	// If still no error, send ack that it is properly received
-	ack := AckMsg{Msg: msg}
-	metaData := <-testMetaDataReceiverChanLocal
-	ack.setId(metaData.Id)
-	ack.Send()
 	return msg, nil
 }
 
@@ -156,7 +150,6 @@ func listen(msg messager) (messager, error) {
 	}
 	defer connection.Close()
 	inputBytes := make([]byte, 4096)
-	fmt.Println("Listening...")
 	result := make(chan error)
 	timer := time.NewTimer(UDP_TIMEOUT * time.Millisecond)
 	var length int

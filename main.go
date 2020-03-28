@@ -12,12 +12,7 @@ import (
 	"./order"
 )
 
-func initMetaDataServer(numNodes, numFloors, ID int) <-chan ch.MetaData {
-	metaData := ch.MetaData{
-		NumNodes:  numNodes,
-		NumFloors: numFloors,
-		Id:        ID,
-	}
+func initMetaDataServer(metaData ch.MetaData) <-chan ch.MetaData {
 
 	metaDataChan := make(chan ch.MetaData, 1)
 
@@ -30,12 +25,13 @@ func initMetaDataServer(numNodes, numFloors, ID int) <-chan ch.MetaData {
 	return metaDataChan
 }
 
-func initChannels() ch.Channels {
+func initChannels(metaData ch.MetaData) ch.Channels {
 	chans := ch.Channels{
 		DelegateOrder:     make(chan elevio.ButtonEvent),
 		OrderCompleted:    make(chan bool),
 		TakingOrder:       make(chan bool),
 		TakeExternalOrder: make(chan elevio.ButtonEvent),
+		MetaData:          initMetaDataServer(metaData),
 	}
 	return chans
 }
@@ -58,14 +54,14 @@ func main() {
 
 	fmt.Printf("\nInitialized with:\n\tID:\t%d\n\tNodes:\t%d\n\tFloors:\t%d\n\n", id, nodes, floors)
 
-	metaData := initMetaDataServer(nodes, floors, id)
+	metaData := ch.MetaData{NumNodes: nodes, NumFloors: floors, Id: id}
 
-	chans := initChannels()
-	err := network.InitNetwork(metaData)
+	chans := initChannels(metaData)
+	err := network.InitNetwork(chans.MetaData)
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	go order.ControlOrders(chans, metaData)
+	go order.ControlOrders(chans)
 	ic.InternalControl(chans)
 }

@@ -21,7 +21,7 @@ func (msg *CostMsg) setId(Id int) {
 	msg.id = Id
 }
 
-func (msg *CostMsg) GetId() int {
+func (msg CostMsg) GetId() int {
 	return msg.id
 }
 
