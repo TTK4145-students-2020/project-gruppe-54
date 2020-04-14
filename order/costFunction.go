@@ -1,6 +1,8 @@
 package order
 
 import (
+	"math/rand"
+
 	"../hardware/driver-go/elevio"
 	"../network/msgs"
 )
@@ -23,7 +25,7 @@ import (
 // 	return cost
 // }
 
-func calculateCost(order elevio.ButtonEvent) uint { return 0 }
+func calculateCost(order elevio.ButtonEvent) uint { return uint(rand.Intn(10)) }
 
 //getCostFuction
 
