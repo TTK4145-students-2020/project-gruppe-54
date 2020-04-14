@@ -9,7 +9,8 @@ import (
 func InternalControl(ch c.Channels) {
 	var numFloors int = 4
 	println("Connecting to server")
-	elevio.Init("localhost:15657", numFloors)
+	port := (<-ch.MetaData).ElevPort
+	elevio.Init("localhost:"+port, numFloors)
 
 	initQueue()
 	FsmInit()

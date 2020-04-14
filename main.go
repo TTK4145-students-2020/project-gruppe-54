@@ -41,20 +41,22 @@ func main() {
 	floors_p := flag.Int("floors", 4, "Number of floors for each node")
 	// Should check over network that this ID is vacant
 	id_p := flag.Int("id", 0, "ID of this node")
+	elevPort_p := flag.String("elev_port", "15657", "The port of the elevator to connect to (for sim purposes)")
 
 	flag.Parse()
 
 	nodes := *nodes_p
 	floors := *floors_p
 	id := *id_p
+	elevPort := *elevPort_p
 
 	if nodes <= 0 || floors <= 0 {
 		log.Fatalf("Number of nodes and floors must be greater than zero! Received: %d nodes and %d floors.\n", nodes, floors)
 	}
 
-	fmt.Printf("\nInitialized with:\n\tID:\t%d\n\tNodes:\t%d\n\tFloors:\t%d\n\n", id, nodes, floors)
+	fmt.Printf("\nInitialized with:\n\tID:\t\t%d\n\tNodes:\t\t%d\n\tFloors:\t\t%d\n\tElevPort:\t%s\n\n", id, nodes, floors, elevPort)
 
-	metaData := ch.MetaData{NumNodes: nodes, NumFloors: floors, Id: id}
+	metaData := ch.MetaData{NumNodes: nodes, NumFloors: floors, Id: id, ElevPort: elevPort}
 
 	chans := initChannels(metaData)
 	err := network.InitNetwork(chans.MetaData)

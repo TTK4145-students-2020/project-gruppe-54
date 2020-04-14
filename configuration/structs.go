@@ -16,4 +16,5 @@ type MetaData struct {
 	NumNodes  int
 	NumFloors int
 	Id        int
+	ElevPort  string
 }
