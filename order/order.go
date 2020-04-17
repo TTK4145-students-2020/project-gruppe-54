@@ -185,7 +185,10 @@ func checkForExternalOrders(ch c.Channels) {
 		go func() {
 			cost := calculateCost(newOrder.Order)
 			costMsg := msgs.CostMsg{Cost: cost}
-			costMsg.Send()
+			for i := 0; i < 5; i++ {
+				costMsg.Send()
+				time.Sleep(1 * time.Millisecond)
+			}
 			fmt.Printf("Sending cost: %+v\n", costMsg)
 			// for i := 0; i < 5; i++ {
 			// }

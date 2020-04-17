@@ -7,7 +7,7 @@ import (
 )
 
 var state int
-
+var dir elevio.MotorDirection
 var Floor int
 
 const (
@@ -35,12 +35,14 @@ func FSM(doorsOpen chan<- int) {
 		case IDLE:
 			if ordersAbove(Floor) {
 				//println("order above,going up, current Floor: ", Floor)
-				elevio.SetMotorDirection(elevio.MD_Up)
+				dir = elevio.MD_Up
+				elevio.SetMotorDirection(dir)
 				state = DRIVE
 			}
 			if ordersBelow(Floor) {
 				//println("order below, going down, current Floor: ", Floor)
-				elevio.SetMotorDirection(elevio.MD_Down)
+				dir = elevio.MD_Down
+				elevio.SetMotorDirection(dir)
 				state = DRIVE
 			}
 			if ordersInFloor(Floor) {
@@ -49,12 +51,14 @@ func FSM(doorsOpen chan<- int) {
 			}
 		case DRIVE:
 			if ordersInFloor(Floor) { // this is the problem : the floor is being kept constant at e.g. 2 while its moving
-				elevio.SetMotorDirection(elevio.MD_Stop)
+				dir = elevio.MD_Stop
+				elevio.SetMotorDirection(dir)
 				state = DOOR_OPEN
 			}
 		case DOOR_OPEN:
 			elevio.SetDoorOpenLamp(true)
-			elevio.SetMotorDirection(elevio.MD_Stop)
+			dir = elevio.MD_Stop
+			elevio.SetMotorDirection(dir)
 			println("DOOR OPEN")
 			DeleteOrder(Floor)
 			doorsOpen <- Floor
@@ -65,4 +69,8 @@ func FSM(doorsOpen chan<- int) {
 			state = IDLE
 		}
 	}
+}
+
+func GetDirection() elevio.MotorDirection {
+	return dir
 }
