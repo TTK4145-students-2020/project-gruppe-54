@@ -148,7 +148,11 @@ func listen(msg messager) (messager, error) {
 	if err != nil {
 		return msg, err
 	}
-	defer connection.Close()
+	terminate := make(chan bool)
+	defer func() {
+		connection.Close()
+		terminate <- true
+	}()
 	inputBytes := make([]byte, 4096)
 	result := make(chan error)
 	timer := time.NewTimer(UDP_TIMEOUT * time.Millisecond)
@@ -158,8 +162,12 @@ func listen(msg messager) (messager, error) {
 		result <- err
 	}()
 	go func() {
-		<-timer.C
-		result <- errors.New("timeout during listening")
+		select {
+		case <-timer.C:
+			result <- errors.New("timeout during listening")
+		case <-terminate:
+			return
+		}
 	}()
 	if err = <-result; err != nil {
 		return msg, err
