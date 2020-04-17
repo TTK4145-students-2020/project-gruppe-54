@@ -1,3 +1,0 @@
-[submodule "hardware/driver-go"]
-	path = hardware/driver-go
-	url = https://github.com/TTK4145-students-2020/driver-go.git
