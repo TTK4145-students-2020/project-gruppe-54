@@ -197,7 +197,7 @@ func checkForExternalOrders(ch c.Channels) {
 		costs := collectCosts(metaData.NumNodes)
 		// Find minimum
 		min := uint(math.Inf(0))
-		minId := 0
+		minId := metaData.Id
 		fmt.Println("Printing costs...")
 		for id, cost := range costs {
 			fmt.Printf("Id: %d, cost: %d\n", id, cost)
