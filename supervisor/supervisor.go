@@ -6,11 +6,11 @@ import (
 	"./watchdog"
 )
 
-var timeoutPeriod int = 5
+var timeoutPeriod time.Duration = 5 * time.Second
 
 //WatchOrder ... watches an order
 func WatchOrder(isNotDone chan bool) {
-	wd := watchdog.NewWatchdog(time.Second * time.Duration(timeoutPeriod))
+	wd := watchdog.NewWatchdog(timeoutPeriod)
 	select { // whichever one of order complete or wd finished first
 	case <-wd.GetKickChannel():
 		isNotDone <- true
