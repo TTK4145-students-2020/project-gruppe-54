@@ -128,7 +128,6 @@ func send(msg messager) {
 		if err != nil {
 			log.Fatal(err)
 		}
-
 		defer connection.Close()
 		var buffer bytes.Buffer
 		encoder := gob.NewEncoder(&buffer)
@@ -148,29 +147,12 @@ func listen(msg messager) (messager, error) {
 	if err != nil {
 		return msg, err
 	}
-	// terminate := make(chan bool)
 	defer connection.Close()
-	// defer func() {
-	// 	terminate <- true
-	// }()
 	inputBytes := make([]byte, 4096)
-	result := make(chan error)
-	timer := time.NewTimer(UDP_TIMEOUT * time.Millisecond)
 	var length int
-	go func() {
-		length, _, err = connection.ReadFromUDP(inputBytes)
-		result <- err
-	}()
-	go func() {
-		// 	select {
-		// 	case
-		// case <-terminate:
-		// 	return
-		// }
-		<-timer.C
-		result <- errors.New("timeout during listening")
-	}()
-	if err = <-result; err != nil {
+	connection.SetReadDeadline(time.Now().Add(time.Millisecond * UDP_TIMEOUT))
+	length, _, err = connection.ReadFromUDP(inputBytes)
+	if err != nil {
 		return msg, err
 	}
 	buffer := bytes.NewBuffer(inputBytes[:length])

@@ -18,7 +18,7 @@ import (
 func numRunningGoroutines() {
 	for {
 		fmt.Printf("\n\n\n\n\nNumber of goroutines: %d\n\n\n\n\n", runtime.NumGoroutine())
-		time.Sleep(5 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -78,7 +78,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	// go numRunningGoroutines()
+	go numRunningGoroutines()
 	go order.ControlOrders(chans)
 	ic.InternalControl(chans)
 }
