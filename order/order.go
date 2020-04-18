@@ -161,28 +161,27 @@ func checkForExternalOrders(ch c.Channels) {
 			continue
 		}
 		// fmt.Printf("Received order: %+v\n", newOrder)
-		// go func() {
-		// 	cost := calculateCost(newOrder.Order)
-		// 	costMsg := msgs.CostMsg{Cost: cost}
-		// 	for i := 0; i < 5; i++ {
-		// 		costMsg.Send()
-		// 		time.Sleep(1 * time.Millisecond)
-		// 	}
-		// 	fmt.Printf("Sending cost: %+v\n", costMsg)
-		// }()
-		// costs := collectCosts(metaData.NumNodes)
+		go func() {
+			cost := calculateCost(newOrder.Order)
+			costMsg := msgs.CostMsg{Cost: cost}
+			for i := 0; i < 5; i++ {
+				costMsg.Send()
+				time.Sleep(1 * time.Millisecond)
+			}
+			fmt.Printf("Sending cost: %+v\n", costMsg)
+		}()
+		costs := collectCosts(metaData.NumNodes)
 		// Find minimum
-		var costs [10]uint
 		min := uint(math.Inf(0))
 		minId := metaData.Id
 		// fmt.Println("Printing costs...")
-		// for id, cost := range costs {
-		// 	fmt.Printf("Id: %d, cost: %d\n", id, cost)
-		// 	if cost < min {
-		// 		min = cost
-		// 		minId = id
-		// 	}
-		// }
+		for id, cost := range costs {
+			// fmt.Printf("Id: %d, cost: %d\n", id, cost)
+			if cost < min {
+				min = cost
+				minId = id
+			}
+		}
 		// fmt.Printf("MinId: %d, MinCost: %d\n", minId, min)
 		// Needs to ensure that order is taken, if min is itself
 		orderDiff := msgs.OrderTensorDiffMsg{
