@@ -36,18 +36,22 @@ func initMetaDataServer(metaData ch.MetaData) <-chan ch.MetaData {
 }
 
 func initChannels(metaData ch.MetaData) ch.Channels {
+	metaDataCh := initMetaDataServer(metaData)
+	updateOrderTensorCh, currentOrderTensorCh := order.InitOrderTensor(metaData.NumNodes, metaData.NumFloors)
 	chans := ch.Channels{
-		DelegateOrder:     make(chan elevio.ButtonEvent),
-		OrderCompleted:    make(chan elevio.ButtonEvent),
-		TakingOrder:       make(chan elevio.ButtonEvent, 100),
-		TakeExternalOrder: make(chan elevio.ButtonEvent),
-		MetaData:          initMetaDataServer(metaData),
+		DelegateOrder:      make(chan elevio.ButtonEvent),
+		OrderCompleted:     make(chan elevio.ButtonEvent),
+		TakingOrder:        make(chan elevio.ButtonEvent, 100),
+		TakeExternalOrder:  make(chan elevio.ButtonEvent),
+		MetaData:           metaDataCh,
+		UpdateOrderTensor:  updateOrderTensorCh,
+		CurrentOrderTensor: currentOrderTensorCh,
 	}
 	return chans
 }
 
 func main() {
-	nodes_p := flag.Int("nodes", 3, "Number of available nodes connected to the network")
+	nodes_p := flag.Int("nodes", 2, "Number of available nodes connected to the network")
 	floors_p := flag.Int("floors", 4, "Number of floors for each node")
 	// Should check over network that this ID is vacant
 	id_p := flag.Int("id", 0, "ID of this node")

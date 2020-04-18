@@ -5,11 +5,13 @@ import (
 )
 
 type Channels struct {
-	DelegateOrder     chan elevio.ButtonEvent
-	OrderCompleted    chan elevio.ButtonEvent
-	TakingOrder       chan elevio.ButtonEvent
-	TakeExternalOrder chan elevio.ButtonEvent
-	MetaData          <-chan MetaData
+	DelegateOrder      chan elevio.ButtonEvent
+	OrderCompleted     chan elevio.ButtonEvent
+	TakingOrder        chan elevio.ButtonEvent
+	TakeExternalOrder  chan elevio.ButtonEvent
+	MetaData           <-chan MetaData
+	UpdateOrderTensor  chan []Node
+	CurrentOrderTensor chan []Node
 }
 
 type MetaData struct {
@@ -18,3 +20,16 @@ type MetaData struct {
 	Id        int
 	ElevPort  string
 }
+
+type FloorOrders struct {
+	Inside,
+	OutsideUp,
+	OutsideDown bool
+}
+
+type Node struct {
+	Floor []FloorOrders
+}
+
+type UpdateOrderTensorChan chan []Node
+type CurrentOrderTensorChan chan []Node

@@ -42,19 +42,18 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, giveUp 
 			}
 		}
 	}()
-ListenLoop:
 	for {
 		select {
 		case receivedDiffMsg := <-receivedDiff:
 			if receivedDiffMsg.Order.Floor == order.Floor && receivedDiffMsg.Diff == msgs.DIFF_REMOVE {
 				fmt.Println("Order completed!")
 				orderComplete = true
-				break ListenLoop
+				return
 			}
 		case <-giveUp:
 			fmt.Println("Order not completed :(")
 			orderComplete = false
-			break ListenLoop
+			return
 		}
 	}
 }
@@ -62,8 +61,8 @@ ListenLoop:
 func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
 	orderMsg := msgs.OrderMsg{Order: order}
 	for i := 0; i < 5; i++ {
-		orderMsg.Send()
-		time.Sleep(1 * time.Microsecond)
+	orderMsg.Send()
+		time.Sleep(1 * time.Millisecond)
 	}
 
 	isNotDone := make(chan bool, 1)
@@ -75,31 +74,13 @@ func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
 	case <-isNotDone:
 		fmt.Printf("Order %+v is not done\n", order)
 		// FIXME: Dirty fix
+		close(isDone)
 		delegateOrder(order, ch) //redelegate
 	case <-isDone:
+		close(isNotDone)
 		// Nothing to do
 	}
 }
-
-// func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
-// 	// TODO:
-// 	// 1. Send order to all PCs on network
-// 	// 2. Wait for cost in return, needs to count or return after some time
-// 	// 3. If it deems itself as most fit, it passes the order to itself. Anyhow, a watchdog is created to ensure the order is completed
-
-// 	metaData := <-ch.MetaData
-
-// 	// 1.
-// 	orderMsg := msgs.OrderMsg{Order: order}
-// 	orderMsg.Send()
-
-// 	// 2.
-
-// 	//chosenElev = lowestCost()
-// 	//sendOrder(chosenElev)
-// 	fmt.Println("delegating")
-// 	ch.TakeExternalOrder <- order //example of sending order to itself
-// }
 
 func collectCosts(numNodes int) []uint {
 	costs := make([]uint, numNodes)
@@ -163,9 +144,16 @@ func ControlOrders(ch c.Channels) {
 			// go delegateOrder(newOrder, ch)
 			go delegateOrder(newOrder, ch)
 		case orderTaken := <-ch.TakingOrder: // the external order has been taken
-			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{Order: orderTaken, Diff: msgs.DIFF_REMOVE}
-			fmt.Printf("COMPLETED ORDER: %+v\n", orderTaken)
+			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
+				Order: orderTaken,
+				Diff:  msgs.DIFF_REMOVE,
+				Id:    (<-ch.MetaData).Id}
+			UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderTensorDiffMsg)
+			fmt.Printf("PC %d completed order %+v\n", (<-ch.MetaData).Id, orderTaken)
+			for i := 0; i < 5; i++ {
 			orderTensorDiffMsg.Send()
+				time.Sleep(1 * time.Millisecond)
+			}
 			//UpdateMatrix()          // this needs functionality
 			//ch.TakingOrder <- false // reset takingorder
 			//println("Taking order")
@@ -186,7 +174,7 @@ func checkForExternalOrders(ch c.Channels) {
 			cost := calculateCost(newOrder.Order)
 			costMsg := msgs.CostMsg{Cost: cost}
 			for i := 0; i < 5; i++ {
-				costMsg.Send()
+			costMsg.Send()
 				time.Sleep(1 * time.Millisecond)
 			}
 			fmt.Printf("Sending cost: %+v\n", costMsg)
@@ -208,8 +196,25 @@ func checkForExternalOrders(ch c.Channels) {
 		}
 		fmt.Printf("MinId: %d, MinCost: %d\n", minId, min)
 		// Needs to ensure that order is taken, if min is itself
+		orderDiff := msgs.OrderTensorDiffMsg{
+			Order: newOrder.Order,
+			Diff:  msgs.DIFF_ADD,
+			Id:    minId,
+		}
+		UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderDiff)
 		if minId == metaData.Id || min == costs[metaData.Id] {
 			ch.TakeExternalOrder <- newOrder.Order
+			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
+				Order: newOrder.Order,
+				Diff:  msgs.DIFF_ADD,
+				Id:    (<-ch.MetaData).Id,
+			}
+			UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderTensorDiffMsg)
+			fmt.Printf("PC %d takes order %+v\n", (<-ch.MetaData).Id, newOrder.Order)
+			for i := 0; i < 5; i++ {
+			orderTensorDiffMsg.Send()
+				time.Sleep(1 * time.Millisecond)
+			}
 		}
 	}
 }

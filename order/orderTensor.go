@@ -1,37 +1,54 @@
 package order
 
-type FloorOrders struct {
-	Inside,
-	OutsideUp,
-	OutsideDown bool
-}
+import (
+	conf "../configuration"
+	"../hardware/driver-go/elevio"
+	"../network/msgs"
+)
 
-type Node struct {
-	Floor []FloorOrders
-}
-
-type UpdateOrderTensorChan <-chan []Node
-type CurrentOrderTensorChan chan<- []Node
-
-func InitOrderTensor(numNodes int, numFloors int) (UpdateOrderTensorChan, CurrentOrderTensorChan) {
-	orderTensor := make([]Node, numNodes)
+func InitOrderTensor(numNodes int, numFloors int) (chan []conf.Node, chan []conf.Node) {
+	orderTensor := make([]conf.Node, numNodes)
 	for i := 0; i < numNodes; i++ {
-		orderTensor[i].Floor = make([]FloorOrders, numFloors)
+		orderTensor[i].Floor = make([]conf.FloorOrders, numFloors)
 		for floor := 0; floor < numFloors; floor++ {
-			orderTensor[i].Floor[floor] = FloorOrders{
+			orderTensor[i].Floor[floor] = conf.FloorOrders{
 				Inside:      false,
 				OutsideUp:   false,
 				OutsideDown: false,
 			}
 		}
 	}
-	updateOrderTensor := make(UpdateOrderTensorChan, 1)
-	currentOrderTensor := make(CurrentOrderTensorChan, 1)
+	updateOrderTensor := make(conf.UpdateOrderTensorChan, 1)
+	currentOrderTensor := make(conf.CurrentOrderTensorChan, 1)
 	go orderTensorServer(orderTensor, updateOrderTensor, currentOrderTensor)
 	return updateOrderTensor, currentOrderTensor
 }
 
-func orderTensorServer(orderTensor []Node, updateOrderTensor UpdateOrderTensorChan, currentOrderTensor CurrentOrderTensorChan) {
+func UpdateOrderTensor(updateOrderTensorCh chan<- []conf.Node, currentOrderTensorCh <-chan []conf.Node, orderDiff msgs.OrderTensorDiffMsg) {
+	newTensor := <-currentOrderTensorCh
+	id := orderDiff.Id
+	order := orderDiff.Order
+
+	var diff bool
+	switch orderDiff.Diff {
+	case msgs.DIFF_ADD:
+		diff = true
+	case msgs.DIFF_REMOVE:
+		diff = false
+	}
+
+	switch order.Button {
+	case elevio.BT_HallUp:
+		newTensor[id].Floor[order.Floor].OutsideUp = diff
+	case elevio.BT_HallDown:
+		newTensor[id].Floor[order.Floor].OutsideDown = diff
+	case elevio.BT_Cab:
+		newTensor[id].Floor[order.Floor].Inside = diff
+	}
+	updateOrderTensorCh <- newTensor
+}
+
+func orderTensorServer(orderTensor []conf.Node, updateOrderTensor conf.UpdateOrderTensorChan, currentOrderTensor conf.CurrentOrderTensorChan) {
 	for {
 		select {
 		case <-updateOrderTensor:
