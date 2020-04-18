@@ -78,7 +78,7 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	go numRunningGoroutines()
+	// go numRunningGoroutines()
 	go order.ControlOrders(chans)
 	ic.InternalControl(chans)
 }

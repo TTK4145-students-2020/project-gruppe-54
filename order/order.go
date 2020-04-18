@@ -61,7 +61,7 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, giveUp 
 func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
 	orderMsg := msgs.OrderMsg{Order: order}
 	for i := 0; i < 5; i++ {
-	orderMsg.Send()
+		orderMsg.Send()
 		time.Sleep(1 * time.Millisecond)
 	}
 
@@ -110,17 +110,17 @@ func collectCosts(numNodes int) []uint {
 		for {
 			select {
 			case <-stopPolling:
-				fmt.Println("Stopped polling")
+				// fmt.Println("Stopped polling")
 				complete <- true
 				return
 			default:
-				fmt.Println("Listening for costs")
+				// fmt.Println("Listening for costs")
 				err := costMsg.Listen()
 				if err != nil {
-					fmt.Printf("Error: %s\n", err)
+					// fmt.Printf("Error: %s\n", err)
 					continue
 				}
-				fmt.Printf("Received from %d\n", costMsg.GetId())
+				// fmt.Printf("Received from %d\n", costMsg.GetId())
 				newCost <- costMsg
 			}
 		}
@@ -131,17 +131,10 @@ func collectCosts(numNodes int) []uint {
 
 //ControlOrders ... Delegates new orders it receives on channel newOrders
 func ControlOrders(ch c.Channels) {
-	// numNodes, _, ID := metaData.NumNodes, metaData.NumFloors, metaData.Id
-	// ID := metaData.Id
-
-	// updateOrderTensorCh, currentOrderTensorCh := InitOrderTensor(numNodes, numFloors)
-
 	go checkForExternalOrders(ch) //Continously check for new orders given to this elev
 	for {
 		select {
 		case newOrder := <-ch.DelegateOrder:
-			//fmt.Println("New order in order.go!")
-			// go delegateOrder(newOrder, ch)
 			go delegateOrder(newOrder, ch)
 		case orderTaken := <-ch.TakingOrder: // the external order has been taken
 			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
@@ -151,12 +144,9 @@ func ControlOrders(ch c.Channels) {
 			UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderTensorDiffMsg)
 			fmt.Printf("PC %d completed order %+v\n", (<-ch.MetaData).Id, orderTaken)
 			for i := 0; i < 5; i++ {
-			orderTensorDiffMsg.Send()
+				orderTensorDiffMsg.Send()
 				time.Sleep(1 * time.Millisecond)
 			}
-			//UpdateMatrix()          // this needs functionality
-			//ch.TakingOrder <- false // reset takingorder
-			//println("Taking order")
 		}
 	}
 }
@@ -169,32 +159,29 @@ func checkForExternalOrders(ch c.Channels) {
 		if err != nil {
 			continue
 		}
-		fmt.Printf("Received order: %+v\n", newOrder)
+		// fmt.Printf("Received order: %+v\n", newOrder)
 		go func() {
 			cost := calculateCost(newOrder.Order)
 			costMsg := msgs.CostMsg{Cost: cost}
 			for i := 0; i < 5; i++ {
-			costMsg.Send()
+				costMsg.Send()
 				time.Sleep(1 * time.Millisecond)
 			}
-			fmt.Printf("Sending cost: %+v\n", costMsg)
-			// for i := 0; i < 5; i++ {
-			// }
-			// time.Sleep(5 * time.Millisecond)
+			// fmt.Printf("Sending cost: %+v\n", costMsg)
 		}()
 		costs := collectCosts(metaData.NumNodes)
 		// Find minimum
 		min := uint(math.Inf(0))
 		minId := metaData.Id
-		fmt.Println("Printing costs...")
+		// fmt.Println("Printing costs...")
 		for id, cost := range costs {
-			fmt.Printf("Id: %d, cost: %d\n", id, cost)
+			// fmt.Printf("Id: %d, cost: %d\n", id, cost)
 			if cost < min {
 				min = cost
 				minId = id
 			}
 		}
-		fmt.Printf("MinId: %d, MinCost: %d\n", minId, min)
+		// fmt.Printf("MinId: %d, MinCost: %d\n", minId, min)
 		// Needs to ensure that order is taken, if min is itself
 		orderDiff := msgs.OrderTensorDiffMsg{
 			Order: newOrder.Order,
@@ -207,12 +194,12 @@ func checkForExternalOrders(ch c.Channels) {
 			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
 				Order: newOrder.Order,
 				Diff:  msgs.DIFF_ADD,
-				Id:    (<-ch.MetaData).Id,
+				Id:    metaData.Id,
 			}
 			UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderTensorDiffMsg)
 			fmt.Printf("PC %d takes order %+v\n", (<-ch.MetaData).Id, newOrder.Order)
 			for i := 0; i < 5; i++ {
-			orderTensorDiffMsg.Send()
+				orderTensorDiffMsg.Send()
 				time.Sleep(1 * time.Millisecond)
 			}
 		}
