@@ -1,6 +1,7 @@
 package internalcontrol
 
 import (
+	"fmt"
 	"time"
 
 	"../hardware/driver-go/elevio"
@@ -18,11 +19,13 @@ const (
 
 func FsmInit() {
 
-	state = 0
-	Floor = elevio.GetFloor()
-	if Floor == -1 {
-		Floor = 0
+	state = IDLE
+	// Needs to start in a well-defined state
+	for Floor = elevio.GetFloor(); Floor < 0; Floor = elevio.GetFloor() {
+		elevio.SetMotorDirection(elevio.MD_Up)
 	}
+	elevio.SetMotorDirection(elevio.MD_Stop)
+	fmt.Println("FSM initialized!")
 }
 
 func FsmUpdateFloor(newFloor int) {
