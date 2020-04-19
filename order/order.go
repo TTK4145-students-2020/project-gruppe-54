@@ -32,13 +32,15 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, giveUp 
 	// Start polling for diff to tensor
 	go func() {
 		for {
-			err := orderTensorDiffMsg.Listen()
-			if err != nil {
-				continue
-			}
-			receivedDiff <- orderTensorDiffMsg
-			if <-killPolling {
+			select {
+			case <-killPolling:
 				return
+			default:
+				err := orderTensorDiffMsg.Listen()
+				if err != nil {
+					continue
+				}
+				receivedDiff <- orderTensorDiffMsg
 			}
 		}
 	}()
@@ -74,10 +76,10 @@ func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
 	case <-isNotDone:
 		fmt.Printf("Order %+v is not done\n", order)
 		// FIXME: Dirty fix
-		close(isDone)
+		// isDone <- false
 		delegateOrder(order, ch) //redelegate
 	case <-isDone:
-		close(isNotDone)
+		// isNotDone <- false
 		// Nothing to do
 	}
 }
@@ -134,8 +136,8 @@ func ControlOrders(ch c.Channels) {
 	go checkForExternalOrders(ch) //Continously check for new orders given to this elev
 	for {
 		select {
+		// case <-ch.DelegateOrder:
 		case newOrder := <-ch.DelegateOrder:
-			// case <-ch.DelegateOrder:
 			go delegateOrder(newOrder, ch)
 		case orderTaken := <-ch.TakingOrder: // the external order has been taken
 			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{

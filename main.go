@@ -4,9 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"time"
-
-	"runtime"
 
 	ch "./configuration"
 	"./hardware/driver-go/elevio"
@@ -14,13 +11,6 @@ import (
 	"./network"
 	"./order"
 )
-
-func numRunningGoroutines() {
-	for {
-		fmt.Printf("\n\n\n\n\nNumber of goroutines: %d\n\n\n\n\n", runtime.NumGoroutine())
-		time.Sleep(1 * time.Second)
-	}
-}
 
 func initMetaDataServer(metaData ch.MetaData) <-chan ch.MetaData {
 
@@ -78,7 +68,6 @@ func main() {
 		log.Fatalln(err)
 	}
 
-	go numRunningGoroutines()
 	go order.ControlOrders(chans)
 	ic.InternalControl(chans)
 }
