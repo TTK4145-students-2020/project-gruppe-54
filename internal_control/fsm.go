@@ -23,6 +23,7 @@ func FsmInit() {
 	// Needs to start in a well-defined state
 	for Floor = elevio.GetFloor(); Floor < 0; Floor = elevio.GetFloor() {
 		elevio.SetMotorDirection(elevio.MD_Up)
+		time.Sleep(1 * time.Second)
 	}
 	elevio.SetMotorDirection(elevio.MD_Stop)
 	fmt.Println("FSM initialized!")

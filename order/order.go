@@ -14,7 +14,7 @@ import (
 var numNodes int = 3
 var numFloors int = 4
 
-func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, giveUp chan bool) {
+func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, isNotDone chan bool) {
 	orderComplete := false //Odin sett in noe her om at den ser på matrisen og hvis den får inn at det er utført blir det true
 
 	// Listen for diff in order tensor
@@ -23,10 +23,14 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, giveUp 
 	killPolling := make(chan bool)
 
 	defer func() {
-		killPolling <- true
 		if orderComplete {
+			// Propagate the signal
 			isDone <- true
+		} else {
+			// Propagate the signal
+			isNotDone <- true
 		}
+		killPolling <- true
 	}()
 
 	// Start polling for diff to tensor
@@ -52,7 +56,7 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, giveUp 
 				orderComplete = true
 				return
 			}
-		case <-giveUp:
+		case <-isNotDone:
 			fmt.Println("Order not completed :(")
 			orderComplete = false
 			return
@@ -118,7 +122,7 @@ func ControlOrders(ch c.Channels) {
 			if newOrder.Button == elevio.BT_Cab {
 				acceptOrder(newOrder, ch)
 			} else {
-				go delegateOrder(newOrder, ch)
+				delegateOrder(newOrder, ch)
 			}
 		case orderCompleted := <-ch.CompletedOrder: // the external order has been taken
 			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
@@ -149,7 +153,6 @@ func checkForNewOrders(ch c.Channels) {
 				costMsg.Send()
 				time.Sleep(1 * time.Millisecond)
 			}
-			fmt.Printf("Sending cost: %+v\n", costMsg)
 		}()
 		costs := collectCosts(metaData.NumNodes)
 		// Find minimum
@@ -191,12 +194,17 @@ func checkForAcceptedOrders(ch c.Channels) {
 			go listenForOrderCompleted(order, isDone, isNotDone)
 			select {
 			case <-isNotDone:
+				// Propagate the signal
+				isNotDone <- true
 				fmt.Printf("Order %+v is not done\n", order)
 				// isDone <- false
 				if order.Button != elevio.BT_Cab {
 					delegateOrder(order, ch) //redelegate
 				}
 			case <-isDone:
+				// Propagate the signal
+				isDone <- true
+				fmt.Printf("Order %+v is done\n", order)
 				// Nothing to do
 			}
 		}
