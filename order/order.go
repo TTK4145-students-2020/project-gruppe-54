@@ -185,28 +185,31 @@ func checkForAcceptedOrders(ch c.Channels) {
 			continue
 		}
 		if acceptedOrder.Diff == msgs.DIFF_ADD {
-			order := acceptedOrder.Order
+			fmt.Println("New accepted order")
+			go func() {
+				order := acceptedOrder.Order
 
-			isNotDone := make(chan bool, 1)
-			isDone := make(chan bool, 1)
+				isNotDone := make(chan bool, 1)
+				isDone := make(chan bool, 1)
 
-			go sv.WatchOrder(isNotDone)
-			go listenForOrderCompleted(order, isDone, isNotDone)
-			select {
-			case <-isNotDone:
-				// Propagate the signal
-				isNotDone <- true
-				fmt.Printf("Order %+v is not done\n", order)
-				// isDone <- false
-				if order.Button != elevio.BT_Cab {
-					delegateOrder(order, ch) //redelegate
+				go sv.WatchOrder(isNotDone)
+				go listenForOrderCompleted(order, isDone, isNotDone)
+				select {
+				case <-isNotDone:
+					// Propagate the signal
+					isNotDone <- true
+					fmt.Printf("Order %+v is not done\n", order)
+					// isDone <- false
+					if order.Button != elevio.BT_Cab {
+						delegateOrder(order, ch) //redelegate
+					}
+				case <-isDone:
+					// Propagate the signal
+					isDone <- true
+					fmt.Printf("Order %+v is done\n", order)
+					// Nothing to do
 				}
-			case <-isDone:
-				// Propagate the signal
-				isDone <- true
-				fmt.Printf("Order %+v is done\n", order)
-				// Nothing to do
-			}
+			}()
 		}
 	}
 }
