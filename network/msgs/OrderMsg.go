@@ -15,14 +15,6 @@ func (msg OrderMsg) port() string {
 	return ORDER_MSG_PORT
 }
 
-func (msg *OrderMsg) setId(Id int) {
-	msg.Id = Id
-}
-
-func (msg *OrderMsg) GetId() int {
-	return msg.Id
-}
-
 func (msg OrderMsg) Send() {
 	send(&msg)
 }

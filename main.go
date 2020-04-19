@@ -4,6 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"runtime"
+	"time"
 
 	ch "./configuration"
 	"./hardware/driver-go/elevio"
@@ -67,7 +69,12 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-
+	go func() {
+		for {
+			fmt.Printf("\n------------------\nnum gos: %d\n------------------\n", runtime.NumGoroutine())
+			time.Sleep(5 * time.Second)
+		}
+	}()
 	go order.ControlOrders(chans)
 	ic.InternalControl(chans)
 }

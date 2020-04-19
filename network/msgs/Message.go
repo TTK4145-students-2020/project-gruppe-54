@@ -37,8 +37,6 @@ type messager interface {
 	Send()
 	Listen() error
 	port() string
-	setId(Id int)
-	GetId() int
 }
 
 func InitTestMessage(testMetaDataSenderChan <-chan c.MetaData, testMetaDataReceiverChan <-chan c.MetaData) error {
@@ -121,8 +119,8 @@ func send(msg messager) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		metaData := <-metaDataChanLocal
-		msg.setId(metaData.Id)
+		// metaData := <-metaDataChanLocal
+		// msg.setId(metaData.Id)
 
 		connection, err := net.DialUDP("udp", nil, destinationAddress)
 		if err != nil {

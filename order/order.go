@@ -64,8 +64,7 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, isNotDo
 	}
 }
 
-func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
-	orderMsg := msgs.OrderMsg{Order: order}
+func delegateOrder(orderMsg msgs.OrderMsg, ch c.Channels) {
 	for i := 0; i < 5; i++ {
 		orderMsg.Send()
 		time.Sleep(1 * time.Millisecond)
@@ -118,12 +117,9 @@ func ControlOrders(ch c.Channels) {
 	for {
 		select {
 		case newOrder := <-ch.DelegateOrder:
-			// If the order comes from inside, only the current elevator can complete it
-			if newOrder.Button == elevio.BT_Cab {
-				acceptOrder(newOrder, ch)
-			} else {
-				delegateOrder(newOrder, ch)
-			}
+			orderMsg := msgs.OrderMsg{Order: newOrder}
+			orderMsg.Id = (<-ch.MetaData).Id
+			delegateOrder(orderMsg, ch)
 		case orderCompleted := <-ch.CompletedOrder: // the external order has been taken
 			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
 				Order: orderCompleted,
@@ -139,40 +135,45 @@ func ControlOrders(ch c.Channels) {
 }
 
 func checkForNewOrders(ch c.Channels) {
-	newOrder := msgs.OrderMsg{Order: elevio.ButtonEvent{Button: elevio.BT_HallUp, Floor: 0}, Id: 0}
+	newOrder := msgs.OrderMsg{}
 	metaData := <-ch.MetaData
 	for {
 		err := newOrder.Listen()
 		if err != nil {
 			continue
 		}
-		go func() {
-			cost := calculateCost(newOrder.Order)
-			costMsg := msgs.CostMsg{Cost: cost}
-			for i := 0; i < 5; i++ {
-				costMsg.Send()
-				time.Sleep(1 * time.Millisecond)
-			}
-		}()
-		costs := collectCosts(metaData.NumNodes)
-		// Find minimum
-		min := uint(math.Inf(0))
-		minId := metaData.Id
-		for id, cost := range costs {
-			if cost < min {
-				min = cost
-				minId = id
-			}
-		}
-		orderDiff := msgs.OrderTensorDiffMsg{
-			Order: newOrder.Order,
-			Diff:  msgs.DIFF_ADD,
-			Id:    minId,
-		}
-		UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderDiff)
-		// Needs to ensure that order is taken, if min is itself
-		if minId == metaData.Id || min == costs[metaData.Id] {
+		// If the order comes from inside, only the current elevator can complete it
+		if newOrder.Order.Button == elevio.BT_Cab && newOrder.Id == (<-ch.MetaData).Id {
 			acceptOrder(newOrder.Order, ch)
+		} else {
+			go func() {
+				cost := calculateCost(newOrder.Order)
+				costMsg := msgs.CostMsg{Cost: cost}
+				for i := 0; i < 5; i++ {
+					costMsg.Send()
+					time.Sleep(1 * time.Millisecond)
+				}
+			}()
+			costs := collectCosts(metaData.NumNodes)
+			// Find minimum
+			min := uint(math.Inf(0))
+			minId := metaData.Id
+			for id, cost := range costs {
+				if cost < min {
+					min = cost
+					minId = id
+				}
+			}
+			orderDiff := msgs.OrderTensorDiffMsg{
+				Order: newOrder.Order,
+				Diff:  msgs.DIFF_ADD,
+				Id:    minId,
+			}
+			UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderDiff)
+			// Needs to ensure that order is taken, if min is itself
+			if minId == metaData.Id || min == costs[metaData.Id] {
+				acceptOrder(newOrder.Order, ch)
+			}
 		}
 	}
 }
@@ -188,6 +189,7 @@ func checkForAcceptedOrders(ch c.Channels) {
 			fmt.Println("New accepted order")
 			go func() {
 				order := acceptedOrder.Order
+				id := acceptedOrder.Id
 
 				isNotDone := make(chan bool, 1)
 				isDone := make(chan bool, 1)
@@ -200,9 +202,12 @@ func checkForAcceptedOrders(ch c.Channels) {
 					isNotDone <- true
 					fmt.Printf("Order %+v is not done\n", order)
 					// isDone <- false
-					if order.Button != elevio.BT_Cab {
-						delegateOrder(order, ch) //redelegate
+					orderMsg := msgs.OrderMsg{
+						Order: order,
+						Id:    id,
 					}
+					delegateOrder(orderMsg, ch) //redelegate
+					fmt.Println("delegated again")
 				case <-isDone:
 					// Propagate the signal
 					isDone <- true
