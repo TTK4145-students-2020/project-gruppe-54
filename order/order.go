@@ -66,20 +66,6 @@ func delegateOrder(order elevio.ButtonEvent, ch c.Channels) {
 		orderMsg.Send()
 		time.Sleep(1 * time.Millisecond)
 	}
-
-	isNotDone := make(chan bool, 1)
-	isDone := make(chan bool, 1)
-
-	go sv.WatchOrder(isNotDone)
-	go listenForOrderCompleted(order, isDone, isNotDone)
-	select {
-	case <-isNotDone:
-		fmt.Printf("Order %+v is not done\n", order)
-		// isDone <- false
-		delegateOrder(order, ch) //redelegate
-	case <-isDone:
-		// Nothing to do
-	}
 }
 
 func collectCosts(numNodes int) []uint {
@@ -123,14 +109,20 @@ L:
 
 //ControlOrders ... Delegates new orders it receives on channel newOrders
 func ControlOrders(ch c.Channels) {
-	go checkForExternalOrders(ch) //Continously check for new orders given to this elev
+	go checkForNewOrders(ch) //Continously check for new orders given to this elev
+	go checkForAcceptedOrders(ch)
 	for {
 		select {
 		case newOrder := <-ch.DelegateOrder:
-			go delegateOrder(newOrder, ch)
-		case orderTaken := <-ch.TakingOrder: // the external order has been taken
+			// If the order comes from inside, only the current elevator can complete it
+			if newOrder.Button == elevio.BT_Cab {
+				acceptOrder(newOrder, ch)
+			} else {
+				go delegateOrder(newOrder, ch)
+			}
+		case orderCompleted := <-ch.CompletedOrder: // the external order has been taken
 			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
-				Order: orderTaken,
+				Order: orderCompleted,
 				Diff:  msgs.DIFF_REMOVE,
 				Id:    (<-ch.MetaData).Id}
 			UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderTensorDiffMsg)
@@ -142,7 +134,7 @@ func ControlOrders(ch c.Channels) {
 	}
 }
 
-func checkForExternalOrders(ch c.Channels) {
+func checkForNewOrders(ch c.Channels) {
 	newOrder := msgs.OrderMsg{Order: elevio.ButtonEvent{Button: elevio.BT_HallUp, Floor: 0}, Id: 0}
 	metaData := <-ch.MetaData
 	for {
@@ -177,18 +169,51 @@ func checkForExternalOrders(ch c.Channels) {
 		UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderDiff)
 		// Needs to ensure that order is taken, if min is itself
 		if minId == metaData.Id || min == costs[metaData.Id] {
-			ch.TakeExternalOrder <- newOrder.Order
-			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
-				Order: newOrder.Order,
-				Diff:  msgs.DIFF_ADD,
-				Id:    metaData.Id,
-			}
-			UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderTensorDiffMsg)
-			for i := 0; i < 5; i++ {
-				orderTensorDiffMsg.Send()
-				time.Sleep(1 * time.Millisecond)
+			acceptOrder(newOrder.Order, ch)
+		}
+	}
+}
+
+func checkForAcceptedOrders(ch c.Channels) {
+	acceptedOrder := msgs.OrderTensorDiffMsg{}
+	for {
+		err := acceptedOrder.Listen()
+		if err != nil {
+			continue
+		}
+		if acceptedOrder.Diff == msgs.DIFF_ADD {
+			order := acceptedOrder.Order
+
+			isNotDone := make(chan bool, 1)
+			isDone := make(chan bool, 1)
+
+			go sv.WatchOrder(isNotDone)
+			go listenForOrderCompleted(order, isDone, isNotDone)
+			select {
+			case <-isNotDone:
+				fmt.Printf("Order %+v is not done\n", order)
+				// isDone <- false
+				if order.Button != elevio.BT_Cab {
+					delegateOrder(order, ch) //redelegate
+				}
+			case <-isDone:
+				// Nothing to do
 			}
 		}
+	}
+}
+
+func acceptOrder(order elevio.ButtonEvent, ch c.Channels) {
+	ch.TakeExternalOrder <- order
+	orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
+		Order: order,
+		Diff:  msgs.DIFF_ADD,
+		Id:    (<-ch.MetaData).Id,
+	}
+	UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderTensorDiffMsg)
+	for i := 0; i < 5; i++ {
+		orderTensorDiffMsg.Send()
+		time.Sleep(1 * time.Millisecond)
 	}
 }
 

@@ -31,7 +31,7 @@ func initChannels(metaData ch.MetaData) ch.Channels {
 	chans := ch.Channels{
 		DelegateOrder:      make(chan elevio.ButtonEvent),
 		OrderCompleted:     make(chan elevio.ButtonEvent),
-		TakingOrder:        make(chan elevio.ButtonEvent, 100),
+		CompletedOrder:     make(chan elevio.ButtonEvent, 100),
 		TakeExternalOrder:  make(chan elevio.ButtonEvent),
 		MetaData:           metaDataCh,
 		UpdateOrderTensor:  updateOrderTensorCh,

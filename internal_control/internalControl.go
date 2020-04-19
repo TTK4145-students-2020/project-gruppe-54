@@ -45,9 +45,9 @@ func InternalControl(ch c.Channels) {
 				Floor:  floor,
 				Button: elevio.BT_Cab,
 			}
-			ch.TakingOrder <- order_OutsideUp_Completed
-			ch.TakingOrder <- order_OutsideDown_Completed
-			ch.TakingOrder <- order_Inside_Completed
+			ch.CompletedOrder <- order_OutsideUp_Completed
+			ch.CompletedOrder <- order_OutsideDown_Completed
+			ch.CompletedOrder <- order_Inside_Completed
 		}
 
 	}

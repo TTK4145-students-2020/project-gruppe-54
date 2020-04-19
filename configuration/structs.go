@@ -7,7 +7,7 @@ import (
 type Channels struct {
 	DelegateOrder      chan elevio.ButtonEvent
 	OrderCompleted     chan elevio.ButtonEvent
-	TakingOrder        chan elevio.ButtonEvent
+	CompletedOrder     chan elevio.ButtonEvent
 	TakeExternalOrder  chan elevio.ButtonEvent
 	MetaData           <-chan MetaData
 	UpdateOrderTensor  chan []Node
