@@ -13,11 +13,8 @@ func WatchOrder(isNotDone chan bool) {
 	wd := watchdog.NewWatchdog(timeoutPeriod)
 	select { // whichever one of order complete or wd finished first
 	case <-wd.GetKickChannel():
-		// If channel is closed, the order is complete
-		if _, ok := <-isNotDone; ok {
-			isNotDone <- true
-			wd.Stop()
-		}
+		isNotDone <- true
+		wd.Stop()
 		return
 	}
 }
