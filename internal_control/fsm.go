@@ -38,23 +38,20 @@ func FSM(doorsOpen chan<- int) {
 		switch state {
 		case IDLE:
 			if ordersAbove(Floor) {
-				//println("order above,going up, current Floor: ", Floor)
 				dir = elevio.MD_Up
 				elevio.SetMotorDirection(dir)
 				state = DRIVE
 			}
 			if ordersBelow(Floor) {
-				//println("order below, going down, current Floor: ", Floor)
 				dir = elevio.MD_Down
 				elevio.SetMotorDirection(dir)
 				state = DRIVE
 			}
 			if ordersInFloor(Floor) {
-				//println("order below, going down, current Floor: ", Floor)
 				state = DOOR_OPEN
 			}
 		case DRIVE:
-			if ordersInFloor(Floor) { // this is the problem : the floor is being kept constant at e.g. 2 while its moving
+			if ordersInFloor(Floor) {
 				dir = elevio.MD_Stop
 				elevio.SetMotorDirection(dir)
 				state = DOOR_OPEN
