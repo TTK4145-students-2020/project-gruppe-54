@@ -38,10 +38,15 @@ func initQueue() {
 // AddOrder ... adds an order to the internal queue
 func AddOrder(order elevio.ButtonEvent) {
 	internalQueue[order.Button][order.Floor] = 1
+	//skru på lys her
+	elevio.SetButtonLamp(order.Button, order.Floor, true)
 }
 
 // DeleteOrder ... removes an order from the internal queue
 func DeleteOrder(currentFloor int) {
+	elevio.SetButtonLamp(0, currentFloor, false) //Turn of all lights in current floor
+	elevio.SetButtonLamp(1, currentFloor, false)
+	elevio.SetButtonLamp(2, currentFloor, false)
 	for i := 0; i < 3; i++ {
 		internalQueue[i][currentFloor] = 0
 	}
