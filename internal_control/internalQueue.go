@@ -36,7 +36,7 @@ func initQueue() {
 }
 
 func AddOrder(order elevio.ButtonEvent) {
-	println("Adding order")
+	// println("Adding order")
 	internalQueue[order.Button][order.Floor] = 1
 }
 

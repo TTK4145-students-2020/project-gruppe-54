@@ -1,8 +1,6 @@
 package internalcontrol
 
 import (
-	"fmt"
-
 	c "../configuration"
 	"../hardware/driver-go/elevio"
 )
@@ -25,25 +23,20 @@ func InternalControl(ch c.Channels) {
 	go elevio.PollFloorSensor(drvFloors)
 	go elevio.PollStopButton(drvStop)
 	go FSM(doorsOpen)
-	i := 0
 	for {
-		i++
-		if i%100000 == 0 {
-			fmt.Println("InternalControl")
-		}
 		select {
 		case floor := <-drvFloors: //Sensor senses a new floor
-			fmt.Println("floor")
+			// fmt.Println("floor")
 			//println("updating floor:", floor)
 			FsmUpdateFloor(floor)
 		case drvOrder := <-drvButtons: // a new button is pressed on this elevator
-			fmt.Println("drvButtons")
+			// fmt.Println("drvButtons")
 			ch.DelegateOrder <- drvOrder //Delegate this order
 		case ExtOrder := <-ch.TakeExternalOrder:
-			fmt.Println("TakeExternalOrder")
+			// fmt.Println("TakeExternalOrder")
 			AddOrder(ExtOrder)
 		case floor := <-doorsOpen:
-			fmt.Println("doorsOpen")
+			// fmt.Println("doorsOpen")
 			order_OutsideUp_Completed := elevio.ButtonEvent{
 				Floor:  floor,
 				Button: elevio.BT_HallUp,

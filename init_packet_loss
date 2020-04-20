@@ -1,0 +1,5 @@
+#!/bin/zsh
+
+sudo iptables -A INPUT -p udp --dport 3000 -m statistic --mode random --probability 0.2 -j DROP
+sudo iptables -A INPUT -p udp --dport 3001 -m statistic --mode random --probability 0.2 -j DROP
+sudo iptables -A INPUT -p udp --dport 3002 -m statistic --mode random --probability 0.2 -j DROP

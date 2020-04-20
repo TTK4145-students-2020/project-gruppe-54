@@ -63,13 +63,13 @@ func FSM(doorsOpen chan<- int) {
 			elevio.SetDoorOpenLamp(true)
 			dir = elevio.MD_Stop
 			elevio.SetMotorDirection(dir)
-			println("DOOR OPEN")
+			// println("DOOR OPEN")
 			DeleteOrder(Floor)
 			doorsOpen <- Floor
 			timer1 := time.NewTimer(2 * time.Second)
 			<-timer1.C
 			elevio.SetDoorOpenLamp(false)
-			println("DOOR CLOSE")
+			// println("DOOR CLOSE")
 			state = IDLE
 		}
 	}

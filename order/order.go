@@ -1,7 +1,6 @@
 package order
 
 import (
-	"fmt"
 	"math"
 	"time"
 
@@ -15,7 +14,7 @@ var numNodes int = 3
 var numFloors int = 4
 
 func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, isNotDone chan bool) {
-	fmt.Println("listenForOrderCompleted")
+	// fmt.Println("listenForOrderCompleted")
 	orderComplete := false //Odin sett in noe her om at den ser på matrisen og hvis den får inn at det er utført blir det true
 
 	// Listen for diff in order tensor
@@ -81,31 +80,32 @@ func collectCosts(numNodes int) []uint {
 	// Stop polling after 50 ms
 	timer := time.NewTimer(50 * time.Millisecond)
 	newCost := make(chan msgs.CostMsg)
+	costMsg := msgs.CostMsg{}
 	go func() {
 		for {
 			select {
-			case newCostMsg := <-newCost:
-				if id := newCostMsg.GetId(); id >= 0 && id < numNodes {
-					costs[id] = newCostMsg.Cost
-				}
 			case <-timer.C:
 				stopPolling <- true
+				close(stopPolling)
 				return
+			default:
+				err := costMsg.Listen()
+				if err != nil {
+					continue
+				}
+				newCost <- costMsg
 			}
 		}
 	}()
-	costMsg := msgs.CostMsg{}
 L:
 	for {
 		select {
 		case <-stopPolling:
 			break L
-		default:
-			err := costMsg.Listen()
-			if err != nil {
-				continue
+		case newCostMsg := <-newCost:
+			if id := newCostMsg.Id; id >= 0 && id < numNodes {
+				costs[id] = newCostMsg.Cost
 			}
-			newCost <- costMsg
 		}
 	}
 	return costs
@@ -113,20 +113,18 @@ L:
 
 //ControlOrders ... Delegates new orders it receives on channel newOrders
 func ControlOrders(ch c.Channels) {
-	newOrders := make(chan msgs.OrderMsg, 10000000)
+	newOrders := make(chan msgs.OrderMsg, 1000)
 	go handleNewOrder(newOrders, ch)
 	go listenForNewOrders(newOrders, ch)
 	// go checkForNewOrders(ch) //Continously check for new orders given to this elev
 	go checkForAcceptedOrders(newOrders, ch)
-	i := 0
 	for {
-		i++
-		if i%100000 == 0 {
-			fmt.Println("ControlOrders")
-		}
+		// if i%100000 == 0 {
+		// 	fmt.Println("ControlOrders")
+		// }
 		select {
 		case newOrder := <-ch.DelegateOrder:
-			fmt.Println("Got new order!")
+			// fmt.Println("Got new order!")
 			orderMsg := msgs.OrderMsg{Order: newOrder}
 			orderMsg.Id = (<-ch.MetaData).Id
 			delegateOrder(orderMsg, ch)
@@ -140,7 +138,7 @@ func ControlOrders(ch c.Channels) {
 				Order: orderCompleted,
 				Diff:  msgs.DIFF_REMOVE,
 				Id:    (<-ch.MetaData).Id}
-			UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderTensorDiffMsg)
+			// UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderTensorDiffMsg)
 			for i := 0; i < 5; i++ {
 				orderTensorDiffMsg.Send()
 				time.Sleep(1 * time.Millisecond)
@@ -151,38 +149,33 @@ func ControlOrders(ch c.Channels) {
 
 func listenForNewOrders(newOrders chan msgs.OrderMsg, ch c.Channels) {
 	newOrder := msgs.OrderMsg{}
-	i := 0
 	for {
-		i++
-		if i%100000 == 0 {
-			fmt.Println("listenForNewOrders")
-		}
+		// if i%100000 == 0 {
+		// 	fmt.Println("listenForNewOrders")
+		// }
 		err := newOrder.Listen()
 		if err != nil {
 			continue
+		} else {
+			newOrders <- newOrder
 		}
 		// if newOrder.Id == (<-ch.MetaData).Id {
 		// 	continue
 		// }
-		newOrders <- newOrder
-		fmt.Println("inserted order into channel")
+		// fmt.Println("inserted order into channel")
 	}
 }
 
 func handleNewOrder(newOrders chan msgs.OrderMsg, ch c.Channels) {
 	metaData := <-ch.MetaData
-	i := 0
 	for {
+		// fmt.Println("handleN
 		newOrder := <-newOrders
-		i++
-		if i%100000 == 0 {
-			fmt.Println("handleNewOrder")
-		}
 		// If the order comes from inside, only the current elevator can complete it
 		if newOrder.Order.Button == elevio.BT_Cab && newOrder.Id == (<-ch.MetaData).Id {
 			acceptOrder(newOrder.Order, ch)
 		} else {
-			fmt.Println("Else")
+			// fmt.Println("Else")
 			go func() {
 				cost := calculateCost(newOrder.Order)
 				costMsg := msgs.CostMsg{Cost: cost}
@@ -191,7 +184,9 @@ func handleNewOrder(newOrders chan msgs.OrderMsg, ch c.Channels) {
 					time.Sleep(1 * time.Millisecond)
 				}
 			}()
+			// fmt.Println("before collectCosts")
 			costs := collectCosts(metaData.NumNodes)
+			// fmt.Println("after collectCosts")
 			// Find minimum
 			min := uint(math.Inf(0))
 			minId := metaData.Id
@@ -201,12 +196,12 @@ func handleNewOrder(newOrders chan msgs.OrderMsg, ch c.Channels) {
 					minId = id
 				}
 			}
-			orderDiff := msgs.OrderTensorDiffMsg{
-				Order: newOrder.Order,
-				Diff:  msgs.DIFF_ADD,
-				Id:    minId,
-			}
-			UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderDiff)
+			// orderDiff := msgs.OrderTensorDiffMsg{
+			// 	Order: newOrder.Order,
+			// 	Diff:  msgs.DIFF_ADD,
+			// 	Id:    minId,
+			// }
+			// UpdateOrderTensor(ch.UpdateOrderTensor, ch.CurrentOrderTensor, orderDiff)
 			// Needs to ensure that order is taken, if min is itself
 			if minId == metaData.Id || min == costs[metaData.Id] {
 				acceptOrder(newOrder.Order, ch)
@@ -226,15 +221,15 @@ func checkForAcceptedOrders(newOrders chan msgs.OrderMsg, ch c.Channels) {
 	i := 0
 	for {
 		i++
-		if i%100000 == 0 {
-			fmt.Println("checkForAcceptedOrders")
-		}
+		// if i%100000 == 0 {
+		// 	fmt.Println("checkForAcceptedOrders")
+		// }
 		err := acceptedOrder.Listen()
 		if err != nil {
 			continue
 		}
 		if acceptedOrder.Diff == msgs.DIFF_ADD {
-			fmt.Println("New accepted order")
+			// fmt.Println("New accepted order")
 			go func() {
 				order := acceptedOrder.Order
 				id := acceptedOrder.Id
@@ -269,7 +264,7 @@ func checkForAcceptedOrders(newOrders chan msgs.OrderMsg, ch c.Channels) {
 }
 
 func acceptOrder(order elevio.ButtonEvent, ch c.Channels) {
-	fmt.Println("acceptOrder")
+	// fmt.Println("acceptOrder")
 	orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
 		Order: order,
 		Diff:  msgs.DIFF_ADD,
@@ -281,7 +276,7 @@ func acceptOrder(order elevio.ButtonEvent, ch c.Channels) {
 		time.Sleep(1 * time.Millisecond)
 	}
 	ch.TakeExternalOrder <- order
-	fmt.Println("Accepted order!")
+	// fmt.Println("Accepted order!")
 }
 
 func equalOrders(order1, order2 elevio.ButtonEvent) bool {
