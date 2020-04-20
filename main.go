@@ -45,7 +45,6 @@ func initChannels(metaData ch.MetaData) ch.Channels {
 func main() {
 	nodes_p := flag.Int("nodes", 2, "Number of available nodes connected to the network")
 	floors_p := flag.Int("floors", 4, "Number of floors for each node")
-	// Should check over network that this ID is vacant
 	id_p := flag.Int("id", 0, "ID of this node")
 	elevPort_p := flag.String("elev_port", "15657", "The port of the elevator to connect to (for sim purposes)")
 

@@ -58,18 +58,3 @@ func orderTensorServer(orderTensor []conf.Node, updateOrderTensor conf.UpdateOrd
 		}
 	}
 }
-
-// func printOrderMatrix(orderMatrix [][]int) {
-// 	counter := 1
-// 	//orderTypes := [3]string{"Down: ", "Up: ", "Cab: "}
-// 	for _, x := range orderMatrix {
-// 		fmt.Print("Heis nr. ", counter, ": [ ")
-// 		counter++
-// 		//counter2 := 0
-// 		for _, y := range x {
-// 			//fmt.Print(orderTypes[counter2])adf
-// 			fmt.Print(y, " ")
-// 		}
-// 		fmt.Print("]\n")
-// 	}
-// }
