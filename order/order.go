@@ -15,6 +15,7 @@ var numNodes int = 3
 var numFloors int = 4
 
 func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, isNotDone chan bool) {
+	fmt.Println("listenForOrderCompleted")
 	orderComplete := false //Odin sett in noe her om at den ser på matrisen og hvis den får inn at det er utført blir det true
 
 	// Listen for diff in order tensor
@@ -52,12 +53,12 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, isNotDo
 		select {
 		case receivedDiffMsg := <-receivedDiff:
 			if receivedDiffMsg.Order.Floor == order.Floor && receivedDiffMsg.Diff == msgs.DIFF_REMOVE {
-				fmt.Printf("Order %+v completed!\n", receivedDiffMsg)
+				// fmt.Printf("Order %+v completed!\n", receivedDiffMsg)
 				orderComplete = true
 				return
 			}
 		case <-isNotDone:
-			fmt.Println("Order not completed :(")
+			// fmt.Println("Order not completed :(")
 			orderComplete = false
 			return
 		}
@@ -112,14 +113,27 @@ L:
 
 //ControlOrders ... Delegates new orders it receives on channel newOrders
 func ControlOrders(ch c.Channels) {
-	go checkForNewOrders(ch) //Continously check for new orders given to this elev
-	go checkForAcceptedOrders(ch)
+	newOrders := make(chan msgs.OrderMsg, 10000000)
+	go handleNewOrder(newOrders, ch)
+	go listenForNewOrders(newOrders)
+	// go checkForNewOrders(ch) //Continously check for new orders given to this elev
+	go checkForAcceptedOrders(newOrders, ch)
+	i := 0
 	for {
+		i++
+		if i%100000 == 0 {
+			fmt.Println("ControlOrders")
+		}
 		select {
 		case newOrder := <-ch.DelegateOrder:
+			fmt.Println("Got new order!")
 			orderMsg := msgs.OrderMsg{Order: newOrder}
 			orderMsg.Id = (<-ch.MetaData).Id
-			delegateOrder(orderMsg, ch)
+			newOrders <- orderMsg
+			// if orderMsg.Order.Button == elevio.BT_Cab {
+			// 	acceptOrder(newOrder, ch)
+			// } else {
+			// }
 		case orderCompleted := <-ch.CompletedOrder: // the external order has been taken
 			orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
 				Order: orderCompleted,
@@ -134,18 +148,37 @@ func ControlOrders(ch c.Channels) {
 	}
 }
 
-func checkForNewOrders(ch c.Channels) {
+func listenForNewOrders(newOrders chan msgs.OrderMsg) {
 	newOrder := msgs.OrderMsg{}
-	metaData := <-ch.MetaData
+	i := 0
 	for {
+		i++
+		if i%100000 == 0 {
+			fmt.Println("listenForNewOrders")
+		}
 		err := newOrder.Listen()
 		if err != nil {
 			continue
+		}
+		newOrders <- newOrder
+		fmt.Println("inserted order into channel")
+	}
+}
+
+func handleNewOrder(newOrders chan msgs.OrderMsg, ch c.Channels) {
+	metaData := <-ch.MetaData
+	i := 0
+	for {
+		newOrder := <-newOrders
+		i++
+		if i%100000 == 0 {
+			fmt.Println("handleNewOrder")
 		}
 		// If the order comes from inside, only the current elevator can complete it
 		if newOrder.Order.Button == elevio.BT_Cab && newOrder.Id == (<-ch.MetaData).Id {
 			acceptOrder(newOrder.Order, ch)
 		} else {
+			fmt.Println("Else")
 			go func() {
 				cost := calculateCost(newOrder.Order)
 				costMsg := msgs.CostMsg{Cost: cost}
@@ -178,9 +211,20 @@ func checkForNewOrders(ch c.Channels) {
 	}
 }
 
-func checkForAcceptedOrders(ch c.Channels) {
+// func checkForNewOrders(ch c.Channels) {
+// 	newOrder := msgs.OrderMsg{}
+// 	metaData := <-ch.MetaData
+
+// }
+
+func checkForAcceptedOrders(newOrders chan msgs.OrderMsg, ch c.Channels) {
 	acceptedOrder := msgs.OrderTensorDiffMsg{}
+	i := 0
 	for {
+		i++
+		if i%100000 == 0 {
+			fmt.Println("checkForAcceptedOrders")
+		}
 		err := acceptedOrder.Listen()
 		if err != nil {
 			continue
@@ -200,18 +244,18 @@ func checkForAcceptedOrders(ch c.Channels) {
 				case <-isNotDone:
 					// Propagate the signal
 					isNotDone <- true
-					fmt.Printf("Order %+v is not done\n", order)
+					// fmt.Printf("Order %+v is not done\n", order)
 					// isDone <- false
 					orderMsg := msgs.OrderMsg{
 						Order: order,
 						Id:    id,
 					}
-					delegateOrder(orderMsg, ch) //redelegate
-					fmt.Println("delegated again")
+					newOrders <- orderMsg //redelegate
+					// fmt.Println("delegated again")
 				case <-isDone:
 					// Propagate the signal
 					isDone <- true
-					fmt.Printf("Order %+v is done\n", order)
+					// fmt.Printf("Order %+v is done\n", order)
 					// Nothing to do
 				}
 			}()
@@ -220,7 +264,7 @@ func checkForAcceptedOrders(ch c.Channels) {
 }
 
 func acceptOrder(order elevio.ButtonEvent, ch c.Channels) {
-	ch.TakeExternalOrder <- order
+	fmt.Println("acceptOrder")
 	orderTensorDiffMsg := msgs.OrderTensorDiffMsg{
 		Order: order,
 		Diff:  msgs.DIFF_ADD,
@@ -231,6 +275,8 @@ func acceptOrder(order elevio.ButtonEvent, ch c.Channels) {
 		orderTensorDiffMsg.Send()
 		time.Sleep(1 * time.Millisecond)
 	}
+	ch.TakeExternalOrder <- order
+	fmt.Println("Accepted order!")
 }
 
 func equalOrders(order1, order2 elevio.ButtonEvent) bool {
