@@ -31,7 +31,6 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, isNotDo
 		}
 		killPolling <- true
 	}()
-
 	// Start polling for diff to tensor
 	go func() {
 		for {
@@ -51,12 +50,10 @@ func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, isNotDo
 		select {
 		case receivedDiffMsg := <-receivedDiff:
 			if receivedDiffMsg.Order.Floor == order.Floor && receivedDiffMsg.Diff == msgs.DIFF_REMOVE {
-				// fmt.Printf("Order %+v completed!\n", receivedDiffMsg)
 				orderComplete = true
 				return
 			}
 		case <-isNotDone:
-			// fmt.Println("Order not completed :(")
 			orderComplete = false
 			return
 		}
@@ -115,15 +112,10 @@ func ControlOrders(ch c.Channels) {
 	newOrders := make(chan msgs.OrderMsg, 1000)
 	go handleNewOrder(newOrders, ch)
 	go listenForNewOrders(newOrders, ch)
-	// go checkForNewOrders(ch) //Continously check for new orders given to this elev
 	go checkForAcceptedOrders(newOrders, ch)
 	for {
-		// if i%100000 == 0 {
-		// 	fmt.Println("ControlOrders")
-		// }
 		select {
 		case newOrder := <-ch.DelegateOrder:
-			// fmt.Println("Got new order!")
 			orderMsg := msgs.OrderMsg{Order: newOrder}
 			orderMsg.Id = (<-ch.MetaData).Id
 			delegateOrder(orderMsg, ch)

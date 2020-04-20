@@ -4,8 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"runtime"
-	"time"
 
 	ch "./configuration"
 	"./hardware/driver-go/elevio"
@@ -15,15 +13,12 @@ import (
 )
 
 func initMetaDataServer(metaData ch.MetaData) <-chan ch.MetaData {
-
 	metaDataChan := make(chan ch.MetaData, 1)
-
 	go func() {
 		for {
 			metaDataChan <- metaData
 		}
 	}()
-
 	return metaDataChan
 }
 
@@ -68,12 +63,6 @@ func main() {
 	if err != nil {
 		log.Fatalln(err)
 	}
-	go func() {
-		for {
-			fmt.Printf("\n------------------\nnum gos: %d\n------------------\n", runtime.NumGoroutine())
-			time.Sleep(5 * time.Second)
-		}
-	}()
 	go order.ControlOrders(chans)
 	ic.InternalControl(chans)
 }
