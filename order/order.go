@@ -115,7 +115,7 @@ L:
 func ControlOrders(ch c.Channels) {
 	newOrders := make(chan msgs.OrderMsg, 10000000)
 	go handleNewOrder(newOrders, ch)
-	go listenForNewOrders(newOrders)
+	go listenForNewOrders(newOrders, ch)
 	// go checkForNewOrders(ch) //Continously check for new orders given to this elev
 	go checkForAcceptedOrders(newOrders, ch)
 	i := 0
@@ -129,6 +129,7 @@ func ControlOrders(ch c.Channels) {
 			fmt.Println("Got new order!")
 			orderMsg := msgs.OrderMsg{Order: newOrder}
 			orderMsg.Id = (<-ch.MetaData).Id
+			delegateOrder(orderMsg, ch)
 			newOrders <- orderMsg
 			// if orderMsg.Order.Button == elevio.BT_Cab {
 			// 	acceptOrder(newOrder, ch)
@@ -148,7 +149,7 @@ func ControlOrders(ch c.Channels) {
 	}
 }
 
-func listenForNewOrders(newOrders chan msgs.OrderMsg) {
+func listenForNewOrders(newOrders chan msgs.OrderMsg, ch c.Channels) {
 	newOrder := msgs.OrderMsg{}
 	i := 0
 	for {
@@ -160,6 +161,9 @@ func listenForNewOrders(newOrders chan msgs.OrderMsg) {
 		if err != nil {
 			continue
 		}
+		// if newOrder.Id == (<-ch.MetaData).Id {
+		// 	continue
+		// }
 		newOrders <- newOrder
 		fmt.Println("inserted order into channel")
 	}
@@ -250,6 +254,7 @@ func checkForAcceptedOrders(newOrders chan msgs.OrderMsg, ch c.Channels) {
 						Order: order,
 						Id:    id,
 					}
+					delegateOrder(orderMsg, ch)
 					newOrders <- orderMsg //redelegate
 					// fmt.Println("delegated again")
 				case <-isDone:
