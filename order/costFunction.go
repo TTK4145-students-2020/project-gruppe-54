@@ -7,7 +7,6 @@ import (
 )
 
 func calculateCost(order elevio.ButtonEvent) uint {
-	// add something for order.ButtonType == BT_Cab e.g. extremely high as it should
 	var cost = abs(order.Floor - elevio.GetFloor())
 	if cost == 0 && ic.GetDirection() != elevio.MD_Stop {
 		cost += 4

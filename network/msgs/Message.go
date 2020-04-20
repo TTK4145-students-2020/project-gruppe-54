@@ -73,7 +73,6 @@ func sendTest(msg TestMsg) {
 		encoder := gob.NewEncoder(&buffer)
 		err = encoder.Encode(&msg)
 		if err != nil {
-			// TODO: Have better error handling here?
 			log.Fatalf("derp, %s\n", err)
 		}
 		connection.Write(buffer.Bytes())
@@ -119,9 +118,6 @@ func send(msg messager) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		// metaData := <-metaDataChanLocal
-		// msg.setId(metaData.Id)
-
 		connection, err := net.DialUDP("udp", nil, destinationAddress)
 		if err != nil {
 			log.Fatal(err)
@@ -131,7 +127,6 @@ func send(msg messager) {
 		encoder := gob.NewEncoder(&buffer)
 		err = encoder.Encode(&msg)
 		if err != nil {
-			// TODO: Have better error handling here?
 			log.Fatalf("derp, %s\n", err)
 		}
 		connection.Write(buffer.Bytes())

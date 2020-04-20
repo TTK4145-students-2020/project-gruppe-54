@@ -35,11 +35,12 @@ func initQueue() {
 
 }
 
+// AddOrder ... adds an order to the internal queue
 func AddOrder(order elevio.ButtonEvent) {
-	// println("Adding order")
 	internalQueue[order.Button][order.Floor] = 1
 }
 
+// DeleteOrder ... removes an order from the internal queue
 func DeleteOrder(currentFloor int) {
 	for i := 0; i < 3; i++ {
 		internalQueue[i][currentFloor] = 0
