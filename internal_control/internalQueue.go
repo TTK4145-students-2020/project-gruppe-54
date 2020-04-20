@@ -38,7 +38,6 @@ func initQueue() {
 // AddOrder ... adds an order to the internal queue
 func AddOrder(order elevio.ButtonEvent) {
 	internalQueue[order.Button][order.Floor] = 1
-	//skru på lys her
 	elevio.SetButtonLamp(order.Button, order.Floor, true)
 }
 
