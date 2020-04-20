@@ -15,7 +15,7 @@ var numNodes int = 3
 var numFloors int = 4
 
 func listenForOrderCompleted(order elevio.ButtonEvent, isDone chan bool, isNotDone chan bool) {
-	orderComplete := false //Odin sett in noe her om at den ser på matrisen og hvis den får inn at det er utført blir det true
+	orderComplete := false
 
 	// Listen for diff in order tensor
 	orderTensorDiffMsg := msgs.OrderTensorDiffMsg{}

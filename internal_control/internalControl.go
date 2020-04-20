@@ -26,28 +26,27 @@ func InternalControl(ch c.Channels) {
 	for {
 		select {
 		case floor := <-drvFloors: //Sensor senses a new floor
-			//println("updating floor:", floor)
 			FsmUpdateFloor(floor)
 		case drvOrder := <-drvButtons: // a new button is pressed on this elevator
 			ch.DelegateOrder <- drvOrder //Delegate this order
 		case ExtOrder := <-ch.TakeExternalOrder:
 			AddOrder(ExtOrder)
 		case floor := <-doorsOpen:
-			order_OutsideUp_Completed := elevio.ButtonEvent{
+			orderOutsideUpCompleted := elevio.ButtonEvent{
 				Floor:  floor,
 				Button: elevio.BT_HallUp,
 			}
-			order_OutsideDown_Completed := elevio.ButtonEvent{
+			orderOutsideDownCompleted := elevio.ButtonEvent{
 				Floor:  floor,
 				Button: elevio.BT_HallDown,
 			}
-			order_Inside_Completed := elevio.ButtonEvent{
+			orderInsideCompleted := elevio.ButtonEvent{
 				Floor:  floor,
 				Button: elevio.BT_Cab,
 			}
-			ch.CompletedOrder <- order_OutsideUp_Completed
-			ch.CompletedOrder <- order_OutsideDown_Completed
-			ch.CompletedOrder <- order_Inside_Completed
+			ch.CompletedOrder <- orderOutsideUpCompleted
+			ch.CompletedOrder <- orderOutsideDownCompleted
+			ch.CompletedOrder <- orderInsideCompleted
 		}
 
 	}
